@@ -1,0 +1,247 @@
+A: 0
+aa: null
+amp: true
+apex_amp: true
+aq_asym: false
+aq_bitw: 3
+aq_enable: true
+aq_mode: LSQ
+aq_neg: null
+aq_pos: null
+aug_splits: 0
+batch_size: 256
+bn_eps: null
+bn_modules: null
+bn_momentum: null
+bn_tf: false
+channels_last: false
+checkpoint_hist: 3
+clip_grad: null
+clip_mode: norm
+color_jitter: 0.4
+conv_modules: null
+cooldown_epochs: 10
+crop_pct: 1.0
+cutmix: 1.0
+cutmix_minmax: null
+data_dir: /home/xts/code/dataset/
+dataset: torch/image_folder
+decay_epochs: 30
+decay_milestones:
+- 40
+- 80
+decay_rate: 0.1
+dist_bn: ''
+down_block_type: default
+drop: 0.0
+drop_block: null
+drop_connect: null
+drop_path: null
+epoch_repeats: 0.0
+epochs: 300
+eval_metric: top1
+experiment: ''
+fl_aq_bitw: 8
+fl_aq_enable: true
+fl_aq_mode: LSQ
+fl_qmodules:
+- conv1
+- linear
+fl_wq_bitw: 8
+fl_wq_enable: true
+fl_wq_mode: PACT
+fl_wq_neg: null
+fl_wq_per_channel: false
+fl_wq_pos: null
+gp: null
+hflip: 0.5
+img_size: 64
+initial_checkpoint: /home/xts/code/SmallQuant/configs/quantized/mbv2/fp32.pth.tar
+input_size: null
+interpolation: bicubic
+jsd: false
+kd_alpha: 1.0
+kd_type: last
+local_rank: 0
+log_interval: 50
+log_wandb: false
+lr: 0.001
+lr_cycle_limit: 1
+lr_cycle_mul: 1.0
+lr_noise: null
+lr_noise_pct: 0.67
+lr_noise_std: 1.0
+mean:
+- 0.485
+- 0.456
+- 0.406
+min_lr: 1.0e-05
+mixup: 0.8
+mixup_mode: batch
+mixup_off_epoch: 0
+mixup_prob: 1.0
+mixup_switch_prob: 0.5
+model_ema: false
+model_ema_decay: 0.9998
+model_ema_force_cpu: false
+momentum: 0.9
+native_amp: false
+no_aug: false
+no_bn: false
+no_prefetcher: false
+no_resume_opt: false
+num_classes: 200
+opt: adamw
+opt_betas: null
+opt_eps: null
+output: ''
+patience_epochs: 10
+percentage: 0
+pin_mem: false
+post_res_bn: false
+pretrained: false
+qmodules:
+  - features.1.conv.0;wq:bit:8
+  - features.1.conv.3
+  - features.2.conv.0
+  - features.2.conv.3;wq:bit:8
+  - features.2.conv.6
+  - features.3.conv.0
+  - features.3.conv.3;wq:bit:8
+  - features.3.conv.6
+  - features.4.conv.0
+  - features.4.conv.3;wq:bit:8
+  - features.4.conv.6
+  - features.5.conv.0
+  - features.5.conv.3;wq:bit:8
+  - features.5.conv.6
+  - features.6.conv.0
+  - features.6.conv.3;wq:bit:8
+  - features.6.conv.6
+  - features.7.conv.0
+  - features.7.conv.3;wq:bit:8
+  - features.7.conv.6
+  - features.8.conv.0
+  - features.8.conv.3;wq:bit:8
+  - features.8.conv.6
+  - features.9.conv.0
+  - features.9.conv.3;wq:bit:8
+  - features.9.conv.6
+  - features.10.conv.0
+  - features.10.conv.3;wq:bit:8
+  - features.10.conv.6
+  - features.11.conv.0
+  - features.11.conv.3;wq:bit:8
+  - features.11.conv.6
+  - features.12.conv.0
+  - features.12.conv.3;wq:bit:8
+  - features.12.conv.6
+  - features.13.conv.0
+  - features.13.conv.3;wq:bit:8
+  - features.13.conv.6
+  - features.14.conv.0
+  - features.14.conv.3;wq:bit:8
+  - features.14.conv.6
+  - features.15.conv.0
+  - features.15.conv.3;wq:bit:8
+  - features.15.conv.6
+  - features.16.conv.0
+  - features.16.conv.3;wq:bit:8
+  - features.16.conv.6
+  - features.17.conv.0
+  - features.17.conv.3;wq:bit:8
+  - features.17.conv.6
+quant_firstlast: false
+quant_stagewise: false
+quant_teacher: false
+ratio:
+- 0.75
+- 1.3333333333333333
+recount: 1
+recovery_interval: 0
+remode: pixel
+replace_ln_by_bn: false
+reprob: 0.25
+resplit: false
+resq_asym: false
+resq_bitw: 3
+resq_enable: true
+resq_mode: LSQ
+resq_modules:
+  - "features.1.conv.2"
+  - "features.2.conv.2"
+  - "features.2.conv.5"
+  - "features.3.conv.2"
+  - "features.3.conv.5"
+  - "features.4.conv.2"
+  - features.4.conv.5
+  - features.5.conv.2
+  - features.5.conv.5
+  - features.6.conv.2
+  - features.6.conv.5
+  - features.7.conv.2
+  - features.7.conv.5
+  - features.8.conv.2
+  - features.8.conv.5
+  - features.9.conv.2
+  - features.9.conv.5
+  - features.10.conv.2
+  - features.10.conv.5
+  - features.11.conv.2
+  - features.11.conv.5
+  - features.12.conv.2
+  - features.12.conv.5
+  - features.13.conv.2
+  - features.13.conv.5
+  - features.14.conv.2
+  - features.14.conv.5
+  - features.15.conv.2
+  - features.15.conv.5
+  - features.16.conv.2
+  - features.16.conv.5
+  - features.17.conv.2
+  - features.17.conv.5
+resq_neg: null
+resq_pos: null
+resume: ''
+save_images: false
+scale:
+- 0.8
+- 1.0
+sched: multistep
+seed: 42
+smoothing: 0.1
+split_bn: false
+start_epoch: null
+std:
+- 0.229
+- 0.224
+- 0.225
+sync_bn: false
+teacher: resnet101
+teacher_checkpoint: ''
+torchscript: false
+train_interpolation: random
+train_split: train
+tta: 0
+use_bn: true
+use_distill_head: false
+use_dual_skip: false
+use_kd: false
+use_layer_scale: false
+use_multi_epochs_loader: false
+use_relu: true
+use_skip: false
+use_token_kd: false
+val_split: validation
+validation_batch_size_multiplier: 1
+vflip: 0.0
+warmup_epochs: 25
+warmup_lr: 0.00001
+weight_decay: 6e-2
+workers: 32
+wq_asym: false
+wq_bitw: 8
+wq_enable: true
+wq_mode: PACT
+wq_per_channel: true

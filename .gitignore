@@ -1,0 +1,11 @@
+*.pt
+__pycache__
+*.swp
+training_logs
+output
+# timm
+*.pth
+*.pth.tar
+pretrained
+*.txt
+HAWQ

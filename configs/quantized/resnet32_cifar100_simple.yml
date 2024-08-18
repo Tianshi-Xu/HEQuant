@@ -1,0 +1,126 @@
+dataset: torch/cifar100
+num_classes: 100
+img_size: 32
+mean:
+    - 0.485
+    - 0.456
+    - 0.406
+std:
+    - 0.229
+    - 0.224
+    - 0.225
+crop_pct: 1.0
+scale:
+    - 0.8
+    - 1.0
+interpolation: bicubic
+train_interpolation: random
+# aa: rand-m9-mstd0.5-inc1
+mixup: 0.0
+mixup_off_epoch: 0
+mixup_prob: 1.0
+mixup_mode: batch
+mixup_switch_prob: 0.0
+cutmix: 0.0
+reprob: 0.25
+remode: pixel
+amp: True
+model: resnet32
+model_ema: False
+batch_size: 128
+lr: 1e-1
+min_lr: 1e-5
+sched: multistep
+weight_decay: 1e-4
+epochs: 200
+cooldown_epochs: 10
+warmup_epochs: 10
+warmup_lr: 0.00001
+opt: sgd
+smoothing: 0.1
+workers: 8
+wq_enable: False
+wq_mode: "LSQ"  # TWN
+wq_bitw: 8
+#wq_pos: 1
+#wq_neg: -1
+aq_enable: False
+aq_mode: "LSQ"
+aq_bitw: 4
+#aq_pos: 1
+#aq_neg: -1
+resq_enable: False
+resq_mode: "LSQ"
+resq_bitw: 8
+#resq_pos: 1
+#resq_neg: -1
+#use_relu: True
+#scaling factor: integer/power-of-2
+
+qmodules: 
+  - "layer1.0.conv1"
+  - "layer1.0.conv2"
+  - "layer1.1.conv1"
+  - "layer1.1.conv2"
+  - "layer1.2.conv1"
+  - "layer1.2.conv2"
+  - "layer1.3.conv1"
+  - "layer1.3.conv2"
+  - "layer1.4.conv1"
+  - "layer1.4.conv2"
+  - "layer2.0.conv1"
+  - "layer2.0.conv2"
+  - "layer2.1.conv1"
+  - "layer2.1.conv2"
+  - "layer2.2.conv1"
+  - "layer2.2.conv2"
+  - "layer2.3.conv1"
+  - "layer2.3.conv2"
+  - "layer2.4.conv1"
+  - "layer2.4.conv2"
+  # - "layer2.1.conv1"
+  # - "layer2.1.conv2"
+  - "layer3.0.conv1"
+  - "layer3.0.conv2"
+  - "layer3.1.conv1"
+  - "layer3.1.conv2"
+  - "layer3.2.conv1"
+  - "layer3.2.conv2"
+  - "layer3.3.conv1"
+  - "layer3.3.conv2"
+  - "layer3.4.conv1"
+  - "layer3.4.conv2"
+resq_modules:
+  - "relu"
+  # - "layer1.0.relu1"
+  - "layer1.0.relu2"
+  # - "layer1.1.relu1"
+  - "layer1.1.relu2"
+  # - "layer1.2.relu1"
+  - "layer1.2.relu2"
+  # - "layer1.3.relu1"
+  - "layer1.3.relu2"
+  # - "layer1.4.relu1"
+  - "layer1.4.relu2"
+  # - "layer2.0.relu1"
+  - "layer2.0.relu2"
+  # - "layer2.1.relu1"
+  - "layer2.1.relu2"
+  # - "layer2.2.relu1"
+  - "layer2.2.relu2"
+  # - "layer2.3.relu1"
+  - "layer2.3.relu2"
+  # - "layer2.4.relu1"
+  - "layer2.4.relu2"
+  # - "layer2.1.relu1"
+  - "layer2.1.relu2"
+  # - "layer3.0.relu1"
+  - "layer3.0.relu2"
+  # - "layer3.1.relu1"
+  - "layer3.1.relu2"
+  # - "layer3.2.relu1"
+  - "layer3.2.relu2"
+  # - "layer3.3.relu1"
+  - "layer3.3.relu2"
+  # - "layer3.4.relu1"
+  - "layer3.4.relu2"

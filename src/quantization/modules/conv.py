@@ -1,5 +1,6 @@
 import copy
 import torch
+import math
 
 
 class QConv2d(torch.nn.Conv2d):
@@ -50,7 +51,7 @@ class QConvBn2d(torch.nn.Conv2d):
                          padding_mode=conv.padding_mode)
         self.quan_w_fn = quan_w_fn
         self.quan_a_fn = quan_a_fn
-
+        self.e = math.ceil(math.log2(conv.kernel_size[0]*conv.kernel_size[1]*conv.in_channels))
         self.weight = torch.nn.Parameter(conv.weight.detach())
         if conv.bias is not None:
             self.bias = torch.nn.Parameter(conv.bias.detach())
@@ -60,6 +61,8 @@ class QConvBn2d(torch.nn.Conv2d):
         self.quan_w_fn.init_from(conv.weight * scale_factor)
         
         self.d1 = None
+        self.output_grad = None
+        self.input = None
 
     def _bn_scaling_factor(self):
         running_std = torch.sqrt(self.bn.running_var + self.bn.eps)
@@ -72,6 +75,8 @@ class QConvBn2d(torch.nn.Conv2d):
         return scale_factor, weight_shape, bias_shape
 
     def forward(self, x):
+        if self.input is None:
+            self.input = x
         if self.d1 is None:
             assert x.shape[2] == x.shape[3]
             self.d1 = x.shape[2]*x.shape[3]

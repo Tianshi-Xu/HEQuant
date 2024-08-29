@@ -709,16 +709,11 @@ def main():
     if args.initial_checkpoint != "":
         _logger.info("Verifying initial model in training dataset")
         # validate(model, loader_train, validate_loss_fn, args, amp_autocast=amp_autocast)
-        # train_metrics = train_one_epoch(
-        #         0, model, loader_train, optimizer, train_loss_fn, args,
-        #         lr_scheduler=lr_scheduler,
-        #         amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
+        train_metrics = train_one_epoch(
+                0, model, loader_train, optimizer, train_loss_fn, args,
+                lr_scheduler=lr_scheduler,
+                amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
     # setup checkpoint saver and eval metric tracking
-    eval_metric = args.eval_metric
-    best_metric = None
-    best_epoch = None
-    saver = None
-    output_dir = None
     if args.rank == 0:
         if args.experiment:
             exp_name = args.experiment
@@ -729,10 +724,7 @@ def main():
                 str(data_config['input_size'][-1])
             ])
     
-    try:
-        ILP(args,loader_train,model,validate_loss_fn)
-    except KeyboardInterrupt:
-        pass
+    ILP(args,loader_train,model,validate_loss_fn)
 
 def next_power_2(d):
     p = math.ceil(math.log2(d))
@@ -768,15 +760,17 @@ def cal_rot(n,m,d1,d2):
                 final_mp = m_p
     # _logger.info("final_mp,final_d: %d %d",final_mp,final_d)
     mul = math.ceil(1.0*m/final_mp)*math.ceil(1.0*d1/final_d)*math.ceil(1.0*d2/final_d)*final_d
-    return min_rot, mul
+    return min_rot, mul, final_mp, final_d
 
 # compute latency given layer dimension
 # (HW,C,K)=(d1,d2,d3), this fuction can be applied to both convolution and GEMM
-def cal_latency(layer,HW,C,K):
+def cal_latency(layer,HW,C,K,t):
     # _logger.info("HW,C,K,b: %d %d %d %d",HW,C,K,b)
+    bandwidth = 384*8*(10**6)  # 384MBps
     n=8192
     num_m=1
-    
+    q = 2*t+9
+    RNS_scale=1.5
     # when padding is not 0, we need to pad the input to power of 2 since we need NTT in neujean's encode
     if hasattr(layer,"padding") and layer.padding !=0:
         power2 = next_power_2(HW)
@@ -788,31 +782,51 @@ def cal_latency(layer,HW,C,K):
         n=int(math.floor(n/mp))
         HW=1
         # _logger.info("hw,n,C,K,b: %d %d %d %d %d",HW,n,C,K,b)
-    rot, mul = cal_rot(n,HW,C,K)
+    rot, mul, final_mp, final_d = cal_rot(n,HW,C,K)
+    num_cts = num_m*math.ceil(HW/final_mp)*(math.ceil(C/final_d)+math.ceil(K/final_d))
+    comm = num_cts * n * q * 2
+    la_comm = comm/bandwidth
     rot = rot*num_m
     mul = mul*num_m
-    return torch.tensor(rot+0.135*mul).item()
+    la_compute = rot+0.135*mul
+    # if plaintext bitwidth > 26-bit, there should be 2 RNS
+    if t > 26:
+        la_compute = la_compute*RNS_scale
+    print("la_compute,la_comm:",rot+0.135*mul,la_comm)
+    return torch.tensor(rot+0.135*mul + la_comm).item()
 
 # find the minimum latency given layer dimension and accumulation bitwidth and t_min
-def find_min_latency(layer,HW,C,K,bw,t_min):
-    b = math.ceil(t_min/bw)
+def find_min_latency(layer,HW,C,K,bw,ba,t_min,total_bw=None):
+    if total_bw is None:
+        print("HW,C,K,bw,ba,t_min:",HW,C,K,bw,ba,t_min)
+        scale_factor, _, _ = layer._bn_scaling_factor()
+        layer.quan_w_fn.set_bw(bw)
+        scaled_weight_int = layer.quan_w_fn(layer.weight * scale_factor)
+        scaled_weight_int = scaled_weight_int / layer.quan_w_fn.alpha
+        total_bw = int(ba + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
+        print("total_bw:",total_bw)
+        print("bw+ba+e:",bw+ba+layer.e) 
+    b = math.ceil(t_min/total_bw)
     if b==1:
-        return cal_latency(layer,HW,C,K)
-    latency1 = cal_latency(layer,math.ceil(HW/b),C,K)
-    latency2 = cal_latency(layer,HW,math.ceil(C/b),K)
-    latency3 = cal_latency(layer,HW,C,math.ceil(K/b))
+        return cal_latency(layer,HW,C,K,total_bw)
+    latency1 = cal_latency(layer,math.ceil(HW/b),C,K,b*total_bw)
+    latency2 = cal_latency(layer,HW,math.ceil(C/b),K,b*total_bw)
+    latency3 = cal_latency(layer,HW,C,math.ceil(K/b),b*total_bw)
     print("latency1,latency2,latency3:",latency1,latency2,latency3)
     return min(latency1,latency2,latency3)
 
-# compute |W'-W|^2
-def cal_delta_w(layer,bw,device):
-    scale_factor, _, _ = layer._bn_scaling_factor()
+# compute |Y'-Y|*H*|Y'-Y|^T
+def cal_sensitivity(layer,bw,ba):
+    layer.quan_w_fn.set_bw(32)
+    layer.quan_a_fn.set_bw(32)
+    output1 = layer(layer.input)
     layer.quan_w_fn.set_bw(bw)
-    scaled_weight = layer.quan_w_fn(layer.weight * scale_factor)
-    delta_w_2 = (torch.norm(layer.weight*scale_factor-scaled_weight,p=2))**2
-    print("delta_w_2:",delta_w_2)
-    return delta_w_2.item()
-
+    layer.quan_a_fn.set_bw(ba)
+    output2 = layer(layer.input)
+    # 问题1，delta x的x取什么?
+    sensitivity = torch.sum(((output1-output2)**2) * ((layer.output_grad) **2))/1024
+    print("sensitivity:",sensitivity)
+    return sensitivity.item()
 
 def ILP(args,loader_train,model,loss_fn):
     target_block_size = args.budget
@@ -823,176 +837,134 @@ def ILP(args,loader_train,model,loss_fn):
     idx = 0
     origin_latency = 0
     cir_idx = []
-    delta_weights_b8 = []
-    delta_weights_b6 = []
-    delta_weights_b5 = []
-    delta_weights_b4 = []
-    delta_weights_b3 = []
-    delta_weights_b2 = []
-    delta_weights_b1 = []
-    
-    latency_accumulation_b6 = []
-    latency_accumulation_b7 = []
-    latency_accumulation_b8 = []
-    latency_accumulation_b9 = []
-    latency_accumulation_b10 = []
-    latency_accumulation_b11 = []
-    latency_accumulation_b12 = []
-    latency_accumulation_b13 = []
-    latency_accumulation_b14 = []
-    latency_accumulation_b15 = []
-    latency_accumulation_b16 = []
-    latency_accumulation_b17 = []
-    latency_accumulation_b18 = []
-    latency_accumulation_b19 = []
-    latency_accumulation_b20 = []
-    latency_accumulation_b21 = []
-    latency_accumulation_b22 = []
-    
-    sensitivity_b8 = []
-    sensitivity_b6 = []
-    sensitivity_b5 = []
-    sensitivity_b4 = []
-    sensitivity_b3 = []
-    sensitivity_b2 = []
-    sensitivity_b1 = []
+    wb_list = [2,3,4]
+    ab_list = [2,3,4,5,6]
+    sensitivity = {}
     _logger.info("target_block_size:"+str(target_block_size))
-    t_min = 17
+    t_min = 18
+    latency_accumulation = {}
+    for wb in wb_list:
+        for ab in ab_list:
+            sensitivity["w"+str(wb)+"a"+str(ab)] = []
+    for i in range(6,27):
+        latency_accumulation["b"+str(i)] = []
     for layer in model.modules():
         if isinstance(layer, QConvBn2d):
-            origin_latency += find_min_latency(layer,layer.d1,layer.in_channels,layer.out_channels,b=1)
+            cir_idx.append(idx)
+            origin_latency += find_min_latency(layer,layer.d1,layer.in_channels,layer.out_channels,args.budget,args.budget,t_min) 
+            for wb in wb_list:
+                for ab in ab_list:
+                    sensitivity["w"+str(wb)+"a"+str(ab)].append(cal_sensitivity(layer,wb,ab))
             # _logger.info("d1:"+str(layer.d1))
-            delta_weights_b1.append(cal_delta_w(layer,1,device))
-            delta_weights_b2.append(cal_delta_w(layer,2,device))
-            delta_weights_b3.append(cal_delta_w(layer,3,device))
-            delta_weights_b4.append(cal_delta_w(layer,4,device))
-            delta_weights_b5.append(cal_delta_w(layer,5,device))
-            delta_weights_b6.append(cal_delta_w(layer,6,device))
-            delta_weights_b8.append(cal_delta_w(layer,8,device))
-            
-            latency_accumulation_b6.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,6,t_min))
-            latency_accumulation_b7.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,7,t_min))
-            latency_accumulation_b8.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,8,t_min))
-            latency_accumulation_b9.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,9,t_min))
-            latency_accumulation_b10.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,10,t_min))
-            latency_accumulation_b11.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,11,t_min))
-            latency_accumulation_b12.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,12,t_min))
-            latency_accumulation_b13.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,13,t_min))
-            latency_accumulation_b14.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,14,t_min))
-            latency_accumulation_b15.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,15,t_min))
-            latency_accumulation_b16.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,16,t_min))
-            latency_accumulation_b17.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,17,t_min))
-            latency_accumulation_b18.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,18,t_min))
-            latency_accumulation_b19.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,19,t_min))
-            latency_accumulation_b20.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,20,t_min))
-            latency_accumulation_b21.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,21,t_min))
-            latency_accumulation_b22.append(find_min_latency(layer, layer.d1,layer.in_features,layer.out_features,22,t_min))
-            
-            
-            # latency_weights_b32.append(cal_latency(layer.d1,layer.in_features,layer.out_features,32,space))
-            idx+=1
-        elif isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            idx+=1
-    # _logger.info(model)
-    _logger.info("delta_weights_b1:"+str(delta_weights_b1))
-    _logger.info("delta_weights_b2:"+str(delta_weights_b2))
-    _logger.info("delta_weights_b4:"+str(delta_weights_b4))
-    _logger.info("delta_weights_b8:"+str(delta_weights_b8))
-    _logger.info("delta_weights_b16:"+str(delta_weights_b16))
-    # _logger.info("delta_weights_b32:"+str(delta_weights_b32))
-    hessian_comp = hessian(model, loss_fn, data=None,dataloader=loader_train, cuda=True)
-    if not args.use_fim:
-        hessian_matrix = hessian_comp.trace()
-        hessian_matrix = [trace/size for trace, size in zip(hessian_matrix, hessian_comp.sizes)]
-        hessian_matrix = [hessian_matrix[i] for i in cir_idx]
-        _logger.info("len hessian_matrix:"+str(len(hessian_matrix)))
-        hessian_matrix = np.array(hessian_matrix)
+            for i in range(6,27):
+                latency_accumulation["b"+str(i)].append(find_min_latency(layer, layer.d1,layer.in_channels,layer.out_channels,1,1,t_min,i))
+                _logger.info("latency_accumulation_b"+str(i)+":"+str(latency_accumulation["b"+str(i)][-1]))
 
-    params = hessian_comp.params
+            # latency_weights_b32.append(cal_latency(layer.d1,layer.in_channels,layer.out_channels,32,space))
+            idx+=1
+
+    _logger.info("origin_latency:"+str(origin_latency))
+    # params = hessian_comp.params
     
     _logger.info("cir_idx:"+str(cir_idx))
     
-    params = [params[i] for i in cir_idx]
-    _logger.info("len params:"+str(len(params)))
-    # _logger.info("params:"+str(params))
-    _logger.info("params[0].shape:"+str(params[0].shape))
     # print(traces)
     num_variable = len(cir_idx)
     variable = {}
     for i in range(num_variable):
-        variable[f"b1_{i}"] = LpVariable(f"b1_{i}", 0, 1, cat=LpInteger)
-        variable[f"b2_{i}"] = LpVariable(f"b2_{i}", 0, 1, cat=LpInteger)
-        variable[f"b4_{i}"] = LpVariable(f"b4_{i}", 0, 1, cat=LpInteger)
-        variable[f"b8_{i}"] = LpVariable(f"b8_{i}", 0, 1, cat=LpInteger)
-        variable[f"b16_{i}"] = LpVariable(f"b16_{i}", 0, 1, cat=LpInteger)
-        # variable[f"b32_{i}"] = LpVariable(f"b32_{i}", 0, 1, cat=LpInteger)
-    prob = LpProblem("Block_size", LpMinimize)
-    prob += sum(variable[f"b1_{i}"]*latency_weights_b1[i] +variable[f"b2_{i}"]*latency_weights_b2[i] + variable[f"b4_{i}"]*latency_weights_b4[i] +variable[f"b8_{i}"]*latency_weights_b8[i] +variable[f"b16_{i}"]*latency_weights_b16[i] for i in range(num_variable))-origin_latency <= 0.01
-    # prob += sum(variable[f"b2_{i}"]*latency_weights_b2[i] + variable[f"b4_{i}"]*latency_weights_b4[i] +variable[f"b8_{i}"]*latency_weights_b8[i] +variable[f"b16_{i}"]*latency_weights_b16[i] for i in range(num_variable))-origin_latency <= 0
-
-    # prob += sum(variable[f"b16_{i}"] for i in range(num_variable)) <= num_variable/2
+        for wb in wb_list:
+            for ab in ab_list:
+                variable[f"wb{wb}ab{ab}_{i}"] = LpVariable(f"wb{wb}ab{ab}_{i}", 0, 1, cat=LpInteger)
+    
+    prob = LpProblem("Bitwidth", LpMinimize)
+    idx = 0
+    tmp = None
+    acc_list = {}
+    for layer in model.modules():
+        if isinstance(layer, QConvBn2d):
+            for wb in wb_list:
+                for ab in ab_list:
+                    scale_factor, _, _ = layer._bn_scaling_factor()
+                    layer.quan_w_fn.set_bw(wb)
+                    scaled_weight_int = layer.quan_w_fn(layer.weight * scale_factor)
+                    scaled_weight_int = scaled_weight_int / layer.quan_w_fn.alpha
+                    # print(layer.in_channels)
+                    # print(scaled_weight_int.shape)
+                    # print(torch.mean(scaled_weight_int))
+                    # print(torch.sum(torch.abs(scaled_weight_int)))
+                    # print("wb,ab,e:",wb,ab,layer.e)
+                    total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
+                    print("total_bw:",total_bw)
+                    if tmp is None:
+                        tmp = variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
+                    else:
+                        tmp += variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
+                    acc_list[f"wb{wb}ab{ab}_{idx}"] = total_bw
+            idx+=1
+        
+    prob += (tmp-origin_latency <= 0.01)
     
     #one layer only have one blocksize
     for i in range(num_variable):
-        prob += (variable[f"b1_{i}"]+ variable[f"b2_{i}"]+ variable[f"b4_{i}"]+ variable[f"b8_{i}"]+ variable[f"b16_{i}"]) == 1
-        # prob += (variable[f"b2_{i}"]+ variable[f"b4_{i}"]+ variable[f"b8_{i}"]+ variable[f"b16_{i}"]) == 1
-    delta_weights_b1 = np.array(delta_weights_b1)
-    delta_weights_b2 = np.array(delta_weights_b2)
-    delta_weights_b4 = np.array(delta_weights_b4)
-    delta_weights_b8 = np.array(delta_weights_b8)
-    delta_weights_b16 = np.array(delta_weights_b16)
+        tmp = None
+        for wb in wb_list:
+            for ab in ab_list:
+                if tmp is None:
+                    tmp = variable[f"wb{wb}ab{ab}_{i}"]
+                else:
+                    tmp += variable[f"wb{wb}ab{ab}_{i}"]
+        prob += (tmp == 1)
+
     # delta_weights_b32 = np.array(delta_weights_b32)
-    if not args.use_fim:
-        sensitivity_b1 = hessian_matrix * delta_weights_b1
-        sensitivity_b2 = hessian_matrix * delta_weights_b2
-        sensitivity_b4 = hessian_matrix * delta_weights_b4
-        sensitivity_b8 = hessian_matrix * delta_weights_b8
-        sensitivity_b16 = hessian_matrix * delta_weights_b16
-    _logger.info("sensitivity_b1:"+str(sensitivity_b1))
-    _logger.info("sensitivity_b2:"+str(sensitivity_b2))
-    _logger.info("sensitivity_b4:"+str(sensitivity_b4))
-    _logger.info("sensitivity_b8:"+str(sensitivity_b8))
-    _logger.info("sensitivity_b16:"+str(sensitivity_b16))
     # sensitivity_b32 = traces * delta_weights_b32
     # optimization target: minimize the sensitivity
-    prob += sum(variable[f"b1_{i}"]*sensitivity_b1[i] +variable[f"b2_{i}"]*sensitivity_b2[i] + variable[f"b4_{i}"]*sensitivity_b4[i] +variable[f"b8_{i}"]*sensitivity_b8[i] +variable[f"b16_{i}"]*sensitivity_b16[i] for i in range(num_variable))
+    idx = 0
+    tmp2 = None
+    for layer in model.modules():
+        if isinstance(layer, QConvBn2d):
+            for wb in wb_list:
+                for ab in ab_list:
+                    if tmp2 is None:
+                        tmp2 = variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
+                    else:
+                        tmp2 += variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
+            idx+=1
+    prob += tmp2
     # prob += sum(variable[f"b2_{i}"]*sensitivity_b2[i] + variable[f"b4_{i}"]*sensitivity_b4[i] +variable[f"b8_{i}"]*sensitivity_b8[i] +variable[f"b16_{i}"]*sensitivity_b16[i] for i in range(num_variable))
 
     status = prob.solve(GLPK_CMD(msg=1, mip=1, options=["--tmlim", "10000","--simplex"]))
     
     LpStatus[status]
 
-    result = []
+    bw_result = []
+    ba_result = []
+    acc_result = []
     current_latency = 0
     for i in range(num_variable):
-        block_size = value(variable[f"b1_{i}"])+value(variable[f"b2_{i}"])*2+value(variable[f"b4_{i}"])*4+value(variable[f"b8_{i}"])*8+value(variable[f"b16_{i}"])*16
-        # block_size = value(variable[f"b2_{i}"])*2+value(variable[f"b4_{i}"])*4+value(variable[f"b8_{i}"])*8+value(variable[f"b16_{i}"])*16
-        result.append(block_size)
-        if block_size == 1:
-            current_latency += latency_weights_b1[i]
-        elif block_size == 2:
-            current_latency += latency_weights_b2[i]
-        elif block_size == 4:
-            current_latency += latency_weights_b4[i]
-        elif block_size == 8:
-            current_latency += latency_weights_b8[i]
-        elif block_size == 16:
-            current_latency += latency_weights_b16[i]
+        for wb in wb_list:
+            for ab in ab_list:
+                if value(variable[f"wb{wb}ab{ab}_{i}"]) == 1:
+                    bw_result.append(wb)
+                    ba_result.append(ab)
+                    acc_result.append(acc_list[f"wb{wb}ab{ab}_{i}"])
+                    break
         # elif block_size == 32:
         #     current_latency += latency_weights_b32[i]
-    result = np.array(result)
-    print(result.shape)
+    bw_result = np.array(bw_result)
+    ba_result = np.array(ba_result)
+    print(bw_result.shape)
     idx = 0
-    for layer in model.modules():
-        if isinstance(layer, CirLinear) or isinstance(layer, CirConv2d):
-            if layer.search_space[-1] < result[idx]:
-                result[idx] = layer.search_space[-1]
-            idx += 1
-    _logger.info("result:"+str(result))
-    _logger.info("origin_latency:"+str(origin_latency))
-    _logger.info("current_latency-origin_latency:"+str(current_latency-origin_latency))
+    _logger.info("bw_result:"+str(bw_result))
+    _logger.info("ba_result:"+str(ba_result))
+    _logger.info("acc_result:"+str(acc_result))
     
-    
+
+def backward_hook(module, grad_input, grad_output):
+    if module.output_grad is None:
+        module.output_grad = grad_output[0]
+    else:
+        module.output_grad += grad_output[0]
+
 def train_one_epoch(
         epoch, model, loader, optimizer, loss_fn, args,
         lr_scheduler=None, saver=None, output_dir=None, amp_autocast=suppress,
@@ -1003,14 +975,11 @@ def train_one_epoch(
             loader.mixup_enabled = False
         elif mixup_fn is not None:
             mixup_fn.mixup_enabled = False
-    if epoch <= 10:
-        for layer in model.modules():
-            if isinstance(layer, CirLinear) or isinstance(layer, CirConv2d):
-                layer.alphas.requires_grad = False
-    else:
-        for layer in model.modules():
-            if isinstance(layer, CirLinear) or isinstance(layer, CirConv2d):
-                layer.alphas.requires_grad = True
+            
+    for name, layer in model.named_modules():
+        if isinstance(layer, QConvBn2d):
+            layer.register_backward_hook(backward_hook)
+
     second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
@@ -1023,7 +992,10 @@ def train_one_epoch(
     num_updates = epoch * len(loader)
     optimizer.zero_grad()
     total_samples = len(loader.dataset)
+    
+    
     for batch_idx, (input, target) in enumerate(loader):
+        print("batch_idx:"+str(batch_idx))
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if not args.prefetcher:
@@ -1088,15 +1060,11 @@ def train_one_epoch(
         if batch_idx>2000 and args.num_classes == 1000:
             total_samples = 2000
             break
-        # end for
+        break
     
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
     _logger.info("len loader.dataset:"+str(total_samples))
-    for param in model.parameters():
-        if param.grad is not None:
-            param.grad.data /= total_samples
-            # _logger.info("mean grad:"+str(torch.mean(param.grad.data)))
     return OrderedDict([('loss', losses_m.avg)])
 
 

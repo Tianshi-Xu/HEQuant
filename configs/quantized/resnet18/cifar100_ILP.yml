@@ -26,7 +26,7 @@ reprob: 0.25
 remode: pixel
 amp: True
 model_ema: False
-batch_size: 256
+batch_size: 1024
 lr: 55e-5
 min_lr: 1e-5
 sched: cosine
@@ -39,7 +39,7 @@ opt: adamw
 smoothing: 0.1
 workers: 4
 log_name: test
-
+budget: 2
 use_kd: true
 kd_alpha: 4
 teacher: OriginResNet18
@@ -51,23 +51,23 @@ powerof2: True
 wq_per_channel: True
 wq_enable: True
 wq_mode: "LSQ"
-wq_bitw: 2
+wq_bitw: 32
 #wq_pos: 1
 #wq_neg: -1
 aq_enable: True
 aq_asym: True
 aq_mode: "LSQ"
-aq_bitw: 8
+aq_bitw: 32
 #aq_pos: 1
 #aq_neg: -1
 resq_enable: True
 resq_mode: "LSQ"
-resq_bitw: 8
+resq_bitw: 32
 #resq_pos: 1
 #resq_neg: -1
 #use_relu: True
 qmodules: 
-  - "conv1;wq:bit:16;aq:bit:16"
+  - "conv1;wq:bit:32;aq:bit:32"
   - "layer1.0.convbn1"
   - "layer1.0.convbn2"
   - "layer1.1.convbn1"
@@ -87,7 +87,7 @@ qmodules:
   # - "layer4.0.shortcut.0"
   - "layer4.1.convbn1"
   - "layer4.1.convbn2"
-  - fc;wq:bit:16;aq:bit:16
+  - fc;wq:bit:32;aq:bit:32
 resq_modules:
     - relu
     - layer1.0.relu2

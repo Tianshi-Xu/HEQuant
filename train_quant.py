@@ -355,6 +355,10 @@ parser.add_argument('--log_name', default='none', type=str,
                     help='act sparsification pattern')
 parser.add_argument('--budget', default=1,
                     help='budget, latency ratio, 4 means w4a4, and the like')
+parser.add_argument('--bw_list', default="", type=str,
+                    help='loool')
+parser.add_argument('--ba_list', default="", type=str,
+                    help='loool')
 lasso_beta=0
 origin_latency = 0
 rotate_mats = {}
@@ -700,18 +704,26 @@ def main():
     if args.use_kd:    
         train_loss_fn_kd = KLLossSoft().cuda()
     validate_loss_fn = nn.CrossEntropyLoss().cuda()
-    validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+    
     # _logger.info("model:"+str(model))
     if args.use_kd:
         _logger.info("Verifying teacher model")
         validate(teacher, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
     if args.initial_checkpoint != "":
         _logger.info("Verifying initial model in training dataset")
-        # validate(model, loader_train, validate_loss_fn, args, amp_autocast=amp_autocast)
-        train_metrics = train_one_epoch(
-                0, model, loader_train, optimizer, train_loss_fn, args,
-                lr_scheduler=lr_scheduler,
-                amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
+        validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+    if args.bw_list != "":
+        bw_list = [int(x) for x in args.bw_list.split(',')]
+        ba_list = [int(x) for x in args.ba_list.split(',')]
+        idx = 0
+        for name,layer in model.named_modules():
+            if "first" in name:
+                continue
+            if isinstance(layer, QConvBn2d):
+                layer.quan_w_fn.set_bw(bw_list[idx])
+                layer.quan_a_fn.set_bw(ba_list[idx])
+                idx += 1
+            
     # setup checkpoint saver and eval metric tracking
     if args.rank == 0:
         if args.experiment:
@@ -723,240 +735,74 @@ def main():
                 str(data_config['input_size'][-1])
             ])
     
-    ILP(args,loader_train,model,validate_loss_fn)
-
-def next_power_2(d):
-    p = math.ceil(math.log2(d))
-    return int(pow(2,p))
-
-# cal_rot and cal_latency are used to compute latency of each layer, each block size
-def cal_rot(n,m,d1,d2):
-    # _logger.info("n,m,d1,d2,b: %d %d %d %d %d",n,m,d1,d2,b)
-    min_rot = 1e8
-    d_min = int(min(d2,d1))
-    final_mp = 0
-    final_d = 0
-    for ri in range(1,(d_min)+1):
-        for ro in range(1,(d_min)+1):
-            d=int(ri*ro)
-            m_p=int(n/d)
-            if m*d_min<n:
-                if d!=d_min:
-                    continue
-                i = 1
-                while i<=m:
-                    next_pow_2 = next_power_2(i)
-                    if next_pow_2*d>n:
-                        break
-                    i+=1
-                m_p=i-1
-            if d>d_min or m_p>m or m_p<=0:
-                continue
-            tmp=m*d1*(ri-1)/(m_p*d)+m*d2*(ro-1)/(m_p*d)
-            if tmp<min_rot:
-                min_rot=tmp
-                final_d=d
-                final_mp = m_p
-    # _logger.info("final_mp,final_d: %d %d",final_mp,final_d)
-    mul = math.ceil(1.0*m/final_mp)*math.ceil(1.0*d1/final_d)*math.ceil(1.0*d2/final_d)*final_d
-    return min_rot, mul, final_mp, final_d
-
-# compute latency given layer dimension
-# (HW,C,K)=(d1,d2,d3), this fuction can be applied to both convolution and GEMM
-def cal_latency(layer,HW,C,K,t):
-    # _logger.info("HW,C,K,b: %d %d %d %d",HW,C,K,b)
-    bandwidth = 384*8*(10**6)  # 384MBps
-    n=8192
-    num_m=1
-    q = 2*t+9
-    RNS_scale=1.5
-    # when padding is not 0, we need to pad the input to power of 2 since we need NTT in neujean's encode
-    if hasattr(layer,"padding") and layer.padding !=0:
-        power2 = next_power_2(HW)
-        if power2>n:
-            num_m=int(math.ceil(power2/n))
-            mp = n
+    eval_metric = args.eval_metric
+    best_metric = None
+    best_epoch = None
+    saver = None
+    output_dir = None
+    if args.rank == 0:
+        if args.experiment:
+            exp_name = args.experiment
         else:
-            mp = power2
-        n=int(math.floor(n/mp))
-        HW=1
-        # _logger.info("hw,n,C,K,b: %d %d %d %d %d",HW,n,C,K,b)
-    rot, mul, final_mp, final_d = cal_rot(n,HW,C,K)
-    num_cts = num_m*math.ceil(HW/final_mp)*(math.ceil(C/final_d)+math.ceil(K/final_d))
-    comm = num_cts * n * q * 2
-    la_comm = comm/bandwidth
-    rot = rot*num_m
-    mul = mul*num_m
-    la_compute = rot+0.135*mul
-    # if plaintext bitwidth > 26-bit, there should be 2 RNS
-    if t > 26:
-        la_compute = la_compute*RNS_scale
-    print("la_compute,la_comm:",la_compute,la_comm)
-    return torch.tensor(la_compute + la_comm).item()
+            exp_name = '-'.join([
+                datetime.now().strftime("%Y%m%d-%H%M%S"),
+                safe_model_name(args.model),
+                str(data_config['input_size'][-1])
+            ])
+        output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
+        decreasing = True if eval_metric == 'loss' else False
+        saver = CheckpointSaver(
+            model=model, optimizer=optimizer, args=args, model_ema=model_ema, amp_scaler=loss_scaler,
+            checkpoint_dir=output_dir, recovery_dir=output_dir, decreasing=decreasing, max_history=args.checkpoint_hist)
+        with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
+            f.write(args_text)
+    with open(os.path.join(output_dir, 'model.txt'), 'w') as f:
+            f.write(str(model))
+    _logger.info(model)
+    try:
+        for epoch in range(start_epoch, num_epochs):
+            if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
+                loader_train.sampler.set_epoch(epoch)
 
-# find the minimum latency given layer dimension and accumulation bitwidth and t_min
-def find_min_latency(layer,HW,C,K,bw,ba,t_min,total_bw=None):
-    if total_bw is None:
-        # print(layer)
-        # print("HW,C,K,bw,ba,t_min:",HW,C,K,bw,ba,t_min)
-        scale_factor, _, _ = layer._bn_scaling_factor()
-        layer.quan_w_fn.set_bw(bw)
-        scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
-        total_bw = int(ba + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
-        # print("total_bw:",total_bw)
-        # print("bw+ba+e:",bw+ba+layer.e) 
-    b = math.ceil(t_min/total_bw)
-    if b==1:
-        return cal_latency(layer,HW,C,K,total_bw)
-    latency1 = cal_latency(layer,math.ceil(HW/b),C,K,b*total_bw)
-    latency2 = cal_latency(layer,HW,math.ceil(C/b),K,b*total_bw)
-    latency3 = cal_latency(layer,HW,C,math.ceil(K/b),b*total_bw)
-    print("latency1,latency2,latency3:",latency1,latency2,latency3)
-    return min(latency1,latency2,latency3)
+            train_metrics = train_one_epoch(
+                epoch, model, loader_train, optimizer, train_loss_fn, args,
+                lr_scheduler=lr_scheduler, saver=saver, output_dir=output_dir,
+                amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
 
-# compute |Y'-Y|*H*|Y'-Y|^T
-def cal_sensitivity(layer,bw,ba):
-    layer.quan_w_fn.set_bw(32)
-    layer.quan_a_fn.set_bw(32)
-    output1 = layer(layer.input)
-    layer.quan_w_fn.set_bw(bw)
-    layer.quan_a_fn.set_bw(ba)
-    output2 = layer(layer.input)
-    # 问题1，delta x的x取什么?
-    # sensitivity = torch.sum(((output1-output2)**2))/1024
-    sensitivity = torch.sum(((output1-output2)**2) * ((layer.output_grad) **2))/1024
-    # print("sensitivity:",sensitivity)
-    return sensitivity.item()
+            if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
+                if args.local_rank == 0:
+                    _logger.info("Distributing BatchNorm running means and vars")
+                distribute_bn(model, args.world_size, args.dist_bn == 'reduce')
 
-def ILP(args,loader_train,model,loss_fn):
-    target_block_size = args.budget
-    for input, target in loader_train:
-        break
-    input, target = input.cuda(), target.cuda()
-    device = input.device
-    idx = 0
-    origin_latency = 0
-    cir_idx = []
-    wb_list = [2,3,4]
-    ab_list = [2,3,4,5,6]
-    sensitivity = {}
-    _logger.info("target_block_size:"+str(target_block_size))
-    t_min = 18
-    latency_accumulation = {}
-    for wb in wb_list:
-        for ab in ab_list:
-            sensitivity["w"+str(wb)+"a"+str(ab)] = []
-    for i in range(6,27):
-        latency_accumulation["b"+str(i)] = []
-    for layer in model.modules():
-        if isinstance(layer, QConvBn2d):
-            cir_idx.append(idx)
-            origin_latency += find_min_latency(layer,layer.d1,layer.in_channels,layer.out_channels,args.budget,args.budget,t_min) 
-            for wb in wb_list:
-                for ab in ab_list:
-                    sensitivity["w"+str(wb)+"a"+str(ab)].append(cal_sensitivity(layer,wb,ab))
-                    _logger.info("sensitivity_w"+str(wb)+"a"+str(ab)+":"+str(sensitivity["w"+str(wb)+"a"+str(ab)][-1]))
-            # _logger.info("d1:"+str(layer.d1))
-            for i in range(6,27):
-                latency_accumulation["b"+str(i)].append(find_min_latency(layer, layer.d1,layer.in_channels,layer.out_channels,1,1,t_min,i))
-                _logger.info("latency_accumulation_b"+str(i)+":"+str(latency_accumulation["b"+str(i)][-1]))
+            eval_metrics = validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
 
-            # latency_weights_b32.append(cal_latency(layer.d1,layer.in_channels,layer.out_channels,32,space))
-            idx+=1
+            if model_ema is not None and not args.model_ema_force_cpu:
+                if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
+                    distribute_bn(model_ema, args.world_size, args.dist_bn == 'reduce')
+                ema_eval_metrics = validate(
+                    model_ema.module, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast,
+                    log_suffix=' (EMA)')
+                eval_metrics = ema_eval_metrics
 
-    _logger.info("origin_latency:"+str(origin_latency))
-    # params = hessian_comp.params
-    
-    _logger.info("cir_idx:"+str(cir_idx))
-    
-    # print(traces)
-    num_variable = len(cir_idx)
-    variable = {}
-    for i in range(num_variable):
-        for wb in wb_list:
-            for ab in ab_list:
-                variable[f"wb{wb}ab{ab}_{i}"] = LpVariable(f"wb{wb}ab{ab}_{i}", 0, 1, cat=LpInteger)
-    
-    prob = LpProblem("Bitwidth", LpMinimize)
-    idx = 0
-    tmp = None
-    acc_list = {}
-    for layer in model.modules():
-        if isinstance(layer, QConvBn2d):
-            for wb in wb_list:
-                for ab in ab_list:
-                    scale_factor, _, _ = layer._bn_scaling_factor()
-                    layer.quan_w_fn.set_bw(wb)
-                    scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
-                    # print(layer.in_channels)
-                    # print(scaled_weight_int.shape)
-                    # print(torch.mean(scaled_weight_int))
-                    # print(torch.sum(torch.abs(scaled_weight_int)))
-                    # print("wb,ab,e:",wb,ab,layer.e)
-                    total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
-                    print("total_bw:",total_bw)
-                    if tmp is None:
-                        tmp = variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
-                    else:
-                        tmp += variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
-                    acc_list[f"wb{wb}ab{ab}_{idx}"] = total_bw
-            idx+=1
-        
-    prob += (tmp-origin_latency <= 0.01)
-    
-    #one layer only have one blocksize
-    for i in range(num_variable):
-        tmp = None
-        for wb in wb_list:
-            for ab in ab_list:
-                if tmp is None:
-                    tmp = variable[f"wb{wb}ab{ab}_{i}"]
-                else:
-                    tmp += variable[f"wb{wb}ab{ab}_{i}"]
-        prob += (tmp == 1)
+            if lr_scheduler is not None:
+                # step LR for next epoch
+                lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
 
-    # delta_weights_b32 = np.array(delta_weights_b32)
-    # sensitivity_b32 = traces * delta_weights_b32
-    # optimization target: minimize the sensitivity
-    idx = 0
-    tmp2 = None
-    for layer in model.modules():
-        if isinstance(layer, QConvBn2d):
-            for wb in wb_list:
-                for ab in ab_list:
-                    if tmp2 is None:
-                        tmp2 = variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
-                    else:
-                        tmp2 += variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
-            idx+=1
-    prob += tmp2
-    # prob += sum(variable[f"b2_{i}"]*sensitivity_b2[i] + variable[f"b4_{i}"]*sensitivity_b4[i] +variable[f"b8_{i}"]*sensitivity_b8[i] +variable[f"b16_{i}"]*sensitivity_b16[i] for i in range(num_variable))
+            if output_dir is not None:
+                update_summary(
+                    epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
+                    write_header=best_metric is None, log_wandb=args.log_wandb and has_wandb)
 
-    status = prob.solve(GLPK_CMD(msg=1, mip=1, options=["--tmlim", "10000","--simplex"]))
-    
-    LpStatus[status]
+            if saver is not None:
+                # save proper checkpoint with eval metric
+                save_metric = eval_metrics[eval_metric]
+                best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
 
-    bw_result = []
-    ba_result = []
-    acc_result = []
-    current_latency = 0
-    for i in range(num_variable):
-        for wb in wb_list:
-            for ab in ab_list:
-                if value(variable[f"wb{wb}ab{ab}_{i}"]) == 1:
-                    bw_result.append(wb)
-                    ba_result.append(ab)
-                    acc_result.append(acc_list[f"wb{wb}ab{ab}_{i}"])
-                    break
-        # elif block_size == 32:
-        #     current_latency += latency_weights_b32[i]
-    print(len(bw_result))
-    idx = 0
-    _logger.info("target: w"+str(args.budget)+"a"+str(args.budget))
-    _logger.info("bw_result:"+str(bw_result))
-    _logger.info("ba_result:"+str(ba_result))
-    _logger.info("acc_result:"+str(acc_result))
-    
+    except KeyboardInterrupt:
+        pass
+    if best_metric is not None:
+        _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
+
 
 def backward_hook(module, grad_input, grad_output):
     if module.output_grad is None:
@@ -967,17 +813,12 @@ def backward_hook(module, grad_input, grad_output):
 def train_one_epoch(
         epoch, model, loader, optimizer, loss_fn, args,
         lr_scheduler=None, saver=None, output_dir=None, amp_autocast=suppress,
-        loss_scaler=None, model_ema=None, mixup_fn=None,teacher=None,loss_fn_kd=None):
-    
+        loss_scaler=None, model_ema=None, mixup_fn=None, teacher=None, loss_fn_kd=None):
     if args.mixup_off_epoch and epoch >= args.mixup_off_epoch:
         if args.prefetcher and loader.mixup_enabled:
             loader.mixup_enabled = False
         elif mixup_fn is not None:
             mixup_fn.mixup_enabled = False
-            
-    for name, layer in model.named_modules():
-        if isinstance(layer, QConvBn2d):
-            layer.register_backward_hook(backward_hook)
 
     second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
     batch_time_m = AverageMeter()
@@ -989,12 +830,7 @@ def train_one_epoch(
     end = time.time()
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
-    optimizer.zero_grad()
-    total_samples = len(loader.dataset)
-    
-    
     for batch_idx, (input, target) in enumerate(loader):
-        print("batch_idx:"+str(batch_idx))
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if not args.prefetcher:
@@ -1005,17 +841,23 @@ def train_one_epoch(
             input = input.contiguous(memory_format=torch.channels_last)
 
         with amp_autocast():
+            input, target = input.cuda(), target.cuda()
             output = model(input)
+
             if args.use_kd:
-                target_t = teacher(input)
-                loss = loss_fn_kd(output, target_t)
+                target = teacher(input)
+                loss = loss_fn_kd(output, target)
             else:
+                output = output[0] if isinstance(output, tuple) else output
+                # print("target.shape: ", target.shape)
+                # print("output.shape: ", output.shape)
+                # print(loss_fn)
                 loss = loss_fn(output, target)
-        # _logger.info("loss:"+str(loss.item()))
+
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
 
-
+        optimizer.zero_grad()
         if loss_scaler is not None:
             loss_scaler(
                 loss, optimizer,
@@ -1028,6 +870,7 @@ def train_one_epoch(
                 dispatch_clip_grad(
                     model_parameters(model, exclude_head='agc' in args.clip_mode),
                     value=args.clip_grad, mode=args.clip_mode)
+            optimizer.step()
 
         if model_ema is not None:
             model_ema.update(model)
@@ -1043,6 +886,31 @@ def train_one_epoch(
                 reduced_loss = reduce_tensor(loss.data, args.world_size)
                 losses_m.update(reduced_loss.item(), input.size(0))
 
+            if args.local_rank == 0:
+                _logger.info(
+                    'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
+                    'Loss: {loss.val:>9.6f} ({loss.avg:>6.4f})  '
+                    'Time: {batch_time.val:.3f}s, {rate:>7.2f}/s  '
+                    '({batch_time.avg:.3f}s, {rate_avg:>7.2f}/s)  '
+                    'LR: {lr:.3e}  '
+                    'Data: {data_time.val:.3f} ({data_time.avg:.3f})'.format(
+                        epoch,
+                        batch_idx, len(loader),
+                        100. * batch_idx / last_idx,
+                        loss=losses_m,
+                        batch_time=batch_time_m,
+                        rate=input.size(0) * args.world_size / batch_time_m.val,
+                        rate_avg=input.size(0) * args.world_size / batch_time_m.avg,
+                        lr=lr,
+                        data_time=data_time_m))
+
+                if args.save_images and output_dir:
+                    torchvision.utils.save_image(
+                        input,
+                        os.path.join(output_dir, 'train-batch-%d.jpg' % batch_idx),
+                        padding=0,
+                        normalize=True)
+
         if saver is not None and args.recovery_interval and (
                 last_batch or (batch_idx + 1) % args.recovery_interval == 0):
             saver.save_recovery(epoch, batch_idx=batch_idx)
@@ -1051,19 +919,11 @@ def train_one_epoch(
             lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
 
         end = time.time()
-        if args.num_classes == 1000 and batch_idx % 50==0:
-            _logger.info("batch_idx:"+str(batch_idx))
-        # if batch_idx>300 and args.num_classes == 200 and "mobile" in args.teacher:
-        #     total_samples = 300
-        #     break
-        if batch_idx>2000 and args.num_classes == 1000:
-            total_samples = 2000
-            break
-        # break
-    
+        # end for
+
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
-    _logger.info("len loader.dataset:"+str(total_samples))
+
     return OrderedDict([('loss', losses_m.avg)])
 
 

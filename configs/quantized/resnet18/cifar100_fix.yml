@@ -38,18 +38,18 @@ warmup_lr: 0.00001
 opt: adamw
 smoothing: 0.1
 workers: 4
-log_name: test
+log_name: resnet18_c100_w3a3
 
 use_kd: true
 kd_alpha: 4
-teacher: OriginResNet18
+teacher: ResNet18
 teacher_checkpoint: pretrained/resnet_c100.pth.tar
 initial_checkpoint: pretrained/resnet_c100.pth.tar
 
 powerof2: True
 # w3a3
-bw_list: 4, 4, 4, 4, 4, 3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 2, 4
-ba_list: 6, 6, 6, 6, 6, 3, 5, 5, 2, 6, 4, 4, 5, 6, 3, 5, 4
+bw_list: 4, 4, 4, 4, 3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 2, 4
+ba_list: 6, 6, 6, 6, 3, 5, 5, 2, 6, 4, 4, 5, 6, 3, 5, 4
 wq_per_channel: True
 wq_enable: True
 wq_mode: "LSQ"

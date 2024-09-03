@@ -848,7 +848,9 @@ def ILP(args,loader_train,model,loss_fn):
             sensitivity["w"+str(wb)+"a"+str(ab)] = []
     for i in range(6,27):
         latency_accumulation["b"+str(i)] = []
-    for layer in model.modules():
+    for name,layer in model.named_modules():
+        if "first" in name:
+            continue
         if isinstance(layer, QConvBn2d):
             cir_idx.append(idx)
             origin_latency += find_min_latency(layer,layer.d1,layer.in_channels,layer.out_channels,args.budget,args.budget,t_min) 
@@ -881,7 +883,9 @@ def ILP(args,loader_train,model,loss_fn):
     idx = 0
     tmp = None
     acc_list = {}
-    for layer in model.modules():
+    for name,layer in model.named_modules():
+        if "first" in name:
+            continue
         if isinstance(layer, QConvBn2d):
             for wb in wb_list:
                 for ab in ab_list:
@@ -920,7 +924,9 @@ def ILP(args,loader_train,model,loss_fn):
     # optimization target: minimize the sensitivity
     idx = 0
     tmp2 = None
-    for layer in model.modules():
+    for name,layer in model.named_modules():
+        if "first" in name:
+            continue
         if isinstance(layer, QConvBn2d):
             for wb in wb_list:
                 for ab in ab_list:
@@ -928,7 +934,7 @@ def ILP(args,loader_train,model,loss_fn):
                         tmp2 = variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
                     else:
                         tmp2 += variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
-            idx+=1
+            idx += 1
     prob += tmp2
     # prob += sum(variable[f"b2_{i}"]*sensitivity_b2[i] + variable[f"b4_{i}"]*sensitivity_b4[i] +variable[f"b8_{i}"]*sensitivity_b8[i] +variable[f"b16_{i}"]*sensitivity_b16[i] for i in range(num_variable))
 
@@ -950,7 +956,7 @@ def ILP(args,loader_train,model,loss_fn):
                     break
         # elif block_size == 32:
         #     current_latency += latency_weights_b32[i]
-    print(len(bw_result))
+    _logger.info(str(len(bw_result)))
     idx = 0
     _logger.info("target: w"+str(args.budget)+"a"+str(args.budget))
     _logger.info("bw_result:"+str(bw_result))
@@ -976,6 +982,8 @@ def train_one_epoch(
             mixup_fn.mixup_enabled = False
             
     for name, layer in model.named_modules():
+        if "first" in name:
+            continue
         if isinstance(layer, QConvBn2d):
             layer.register_backward_hook(backward_hook)
 
@@ -991,7 +999,6 @@ def train_one_epoch(
     num_updates = epoch * len(loader)
     optimizer.zero_grad()
     total_samples = len(loader.dataset)
-    
     
     for batch_idx, (input, target) in enumerate(loader):
         print("batch_idx:"+str(batch_idx))
@@ -1014,7 +1021,6 @@ def train_one_epoch(
         # _logger.info("loss:"+str(loss.item()))
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
-
 
         if loss_scaler is not None:
             loss_scaler(
@@ -1065,7 +1071,6 @@ def train_one_epoch(
         optimizer.sync_lookahead()
     _logger.info("len loader.dataset:"+str(total_samples))
     return OrderedDict([('loss', losses_m.avg)])
-
 
 def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix=''):
     batch_time_m = AverageMeter()
@@ -1129,7 +1134,6 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
 
     return metrics
-
 
 if __name__ == '__main__':
     main()

@@ -69,7 +69,7 @@ resq_bitw: 8
 #resq_neg: -1
 #use_relu: True
 qmodules: 
-  - "conv1;wq:bit:8;aq:bit:8"
+  - "convbn_first;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"
   - "layer1.0.convbn2"
   - "layer1.1.convbn1"

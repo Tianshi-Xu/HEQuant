@@ -39,35 +39,47 @@ class LsqQuantizer(Quantizer):
         normalize_first=False,
         p2_round_scale=False,
         init=False,
+        apot=False,
+        out_channels=None,
         **kwargs,
     ):
         super().__init__(
             bit, thd_pos, thd_neg, all_positive, symmetric, per_channel, normalize_first
         )
-        self.scale = torch.nn.Parameter(torch.ones(1))
-        self.a = torch.nn.Parameter(torch.ones(1)) # scale = a * scale where a is integer and scale is power of 2
+        self.per_channel = per_channel
+        if self.per_channel:
+            assert out_channels is not None
+            self.scale = torch.nn.Parameter(torch.ones(out_channels,1))
+        else:
+            self.scale = torch.nn.Parameter(torch.ones(1))
+        # Whether use additive power of 2
+        self.apot = apot
+        if apot:
+            if self.per_channel:
+                self.a = torch.nn.Parameter(torch.ones(out_channels,1))
+            else:
+                self.a = torch.nn.Parameter(torch.ones(1)) # scale = a * scale where a is integer and scale is power of 2
+        else:
+            self.a = torch.tensor(1.0)
         self.p2_round_scale = p2_round_scale
         self.alpha = 0.0
         self.init = init
 
-    def init_from(self, x, **kwargs):
+    def init_from(self, x):
         x = self.normalize(x)
         if self.per_channel:
-            self.scale = torch.nn.Parameter(
-                x.detach().abs().mean(dim=list(range(1, x.dim())), keepdim=True) * 2 / (self.thd_pos ** 0.5))
+            self.scale.data.copy_(
+                x.detach().abs().mean(dim=list(range(1, x.dim())), keepdim=True).reshape(-1, 1) * 2 / (self.thd_pos ** 0.5))
         else:
-            self.scale = torch.nn.Parameter(x.detach().abs().mean() * 2 / (self.thd_pos ** 0.5))
+            self.scale.data.copy_(x.detach().abs().mean() * 2 / (self.thd_pos ** 0.5))
         self.init = True
 
-    def forward(self, x):
+    def quantize(self, x):
         if not self.init:
             self.init_from(x)
-        if self.all_positive:
-            if(torch.min(x) < 0):
-                print("x.shape:",x.shape)
         if self.per_channel:
-            # s_grad_scale = 1.0 / ((self.thd_pos * x[0].numel()) ** 0.5)
-            s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
+            s_grad_scale = 1.0 / ((self.thd_pos * x[0].numel()) ** 0.5)
+            # s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
         else:
             s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
         s_scale = grad_scale(clip(self.scale, torch.tensor(self.eps).float().to(self.scale.device)), s_grad_scale)
@@ -78,18 +90,33 @@ class LsqQuantizer(Quantizer):
             s_scale = round_p2(s_scale)
             a_scale = round_pass(a_scale)
             s_scale = s_scale * a_scale
-
-        x = x / s_scale
+        if self.per_channel:
+            x = x / s_scale.repeat(1, x[0].numel()).reshape(x.shape)
+        else:
+            x = x / s_scale
         if self.bit == 1 and not self.all_positive:
             x = torch.sign(x)
         else:
             x = torch.clamp(x, self.thd_neg, self.thd_pos)
             x = round_pass(x)
-        x = x * s_scale
         self.alpha = s_scale
+        return x
+    
+    def dequantize(self, x):
+        s_scale = self.alpha
+        if self.per_channel:
+            x = x * s_scale.repeat(1, x[0].numel()).reshape(x.shape)
+        else:
+            x = x * s_scale
+        return x
+    
+    def forward(self, x):
+        x = self.quantize(x)
+        x = self.dequantize(x)
         return x
 
     def set_bw(self, bit):
+        self.init=False
         self.bit = bit
         if self.all_positive:
             if bit == 1:
@@ -123,5 +150,6 @@ class LsqQuantizer(Quantizer):
             f"norm=({self.normalize_first}, {self.eps}, {self.gamma}), "
             f"all_positive={self.all_positive}, "
             f"symmetric={self.symmetric}, "
-            f"per_channel={self.per_channel}"
+            f"per_channel={self.per_channel}, "
+            f"apot={self.apot} "
         )

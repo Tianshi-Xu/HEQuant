@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn as nn
 from .conv import QConv2d, QConvBn2d
 from .linear import QLinear
 from .attention import QAttention
@@ -15,6 +16,7 @@ QMODULE_MAPPINGS = {
     torch.nn.Linear: QLinear,
     Attention: QAttention,
     ConvBn2d: QConvBn2d,
+    # nn.Sequential:QConvBn2d,
     # torch.nn.intrinsic.modules.fused.ConvBn2d: QConvBn2d,
 }
 
@@ -39,6 +41,15 @@ def set_module_by_name(model, module_name, module):
 def replace_module_by_qmodule(model, qconfigs):
     for name, cfg in qconfigs.items():
         module = get_module_by_name(model, name)
+        if isinstance(module, ConvBn2d):
+            wq = {"out_channels": module[0].out_channels}
+        elif isinstance(module, nn.Conv2d):
+            wq = {"out_channels": module.out_channels}
+        elif isinstance(module, nn.Linear):
+            wq = {"out_channels": module.out_features}
+        cfg['weight'].update(wq)
+        cfg['act'].update(wq)
+        # print(cfg['weight'])
         qmodule = QMODULE_MAPPINGS[type(module)](
             module,
             quan_w_fn=build_quantizer(cfg["weight"]),

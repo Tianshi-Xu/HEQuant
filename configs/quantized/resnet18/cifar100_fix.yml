@@ -26,7 +26,7 @@ reprob: 0.25
 remode: pixel
 amp: True
 model_ema: False
-batch_size: 1024
+batch_size: 256
 lr: 55e-5
 min_lr: 1e-5
 sched: cosine
@@ -38,36 +38,38 @@ warmup_lr: 0.00001
 opt: adamw
 smoothing: 0.1
 workers: 4
-log_name: resnet18_c100_ILP
-budget: 3
+log_name: test
+
 use_kd: true
 kd_alpha: 4
-teacher: ResNet18
+teacher: OriginResNet18
 teacher_checkpoint: pretrained/resnet_c100.pth.tar
 initial_checkpoint: pretrained/resnet_c100.pth.tar
 
 powerof2: True
-
+# w3a3
+bw_list: 4, 4, 4, 4, 4, 3, 4, 4, 3, 4, 4, 4, 3, 4, 4, 2, 4
+ba_list: 6, 6, 6, 6, 6, 3, 5, 5, 2, 6, 4, 4, 5, 6, 3, 5, 4
 wq_per_channel: True
 wq_enable: True
 wq_mode: "LSQ"
-wq_bitw: 32
+wq_bitw: 8
 #wq_pos: 1
 #wq_neg: -1
 aq_enable: True
 aq_asym: True
 aq_mode: "LSQ"
-aq_bitw: 32
+aq_bitw: 8
 #aq_pos: 1
 #aq_neg: -1
 resq_enable: True
 resq_mode: "LSQ"
-resq_bitw: 32
+resq_bitw: 8
 #resq_pos: 1
 #resq_neg: -1
 #use_relu: True
 qmodules: 
-  - "convbn_first;wq:bit:32;aq:bit:32"
+  - "conv1;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"
   - "layer1.0.convbn2"
   - "layer1.1.convbn1"
@@ -87,7 +89,7 @@ qmodules:
   # - "layer4.0.shortcut.0"
   - "layer4.1.convbn1"
   - "layer4.1.convbn2"
-  - fc;wq:bit:32;aq:bit:32
+  - fc;wq:bit:8;aq:bit:8
 resq_modules:
     - relu
     - layer1.0.relu2

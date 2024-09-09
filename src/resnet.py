@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.ao.nn.intrinsic import ConvBn2d
-from torchvision.models import resnet18
+from torchvision.models import resnet18,ResNet18_Weights
 try:
     from timm.models.registry import register_model
 except ImportError:
@@ -90,7 +90,13 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.in_planes = 64
         self.relu = nn.ReLU()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3,
+        self.maxpool = None
+        if num_classes == 1000:
+            self.conv1 = nn.Conv2d(3, 64, kernel_size=7,
+                               stride=2, padding=3, bias=False)
+            self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        else:
+            self.conv1 = nn.Conv2d(3, 64, kernel_size=3,
                                stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.convbn_first = ConvBn2d(self.conv1, self.bn1)
@@ -110,6 +116,8 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         out = self.relu(self.convbn_first(x))
+        if self.maxpool is not None:
+            out = self.maxpool(out)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
@@ -141,11 +149,12 @@ def ResNet152():
 
 
 def test():
-    net = ResNet18()
-    y = net(torch.randn(1, 3, 32, 32))
-    print(net)
-    for name,layer in net.named_modules():
-        print(name)
+    net = ResNet18(num_classes=1000)
+    net.load_state_dict(torch.load("/home/xts/code/HEQuant/pretrained/resnet18_image.pth"),strict=False)
+    # y = net(torch.randn(1, 3, 32, 32))
+    # print(net)
+    # for name,layer in net.named_modules():
+    #     print(name)
         # print(layer)
-
+    # net = resnet18(weights=ResNet18_Weights.DEFAULT)
 test()

@@ -434,7 +434,7 @@ def get_qat_model(model, args):
                 "per_channel": args.wq_per_channel,
                 "normalize_first": False,
                 "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
-                "apot": True,
+                "apot": False,
             }
             wcfg.update(wq)
             acfg = {

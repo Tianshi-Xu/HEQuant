@@ -20,17 +20,18 @@ import time
 import yaml
 import os
 import logging
+import warnings
 from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
-from pulp import LpVariable,LpProblem,LpInteger,LpMinimize,GLPK_CMD,LpStatus,value
-import pulp
 from src.utils.hess.myhessian import hessian # Hessian computation
 import numpy as np
+import torch.multiprocessing as mp
 import torch
 import torch.nn as nn
 import torchvision.utils
+import torch.distributed as dist
 import math
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
@@ -341,6 +342,20 @@ parser.add_argument('--aq_asym', action='store_true', default=True,
                     help='assymentric quantization for activation')
 parser.add_argument('--powerof2', action='store_true', default=True,
                     help='whether scale is power of 2')
+# distributed train
+parser.add_argument('--world-size', default=-1, type=int,
+                    help='number of nodes for distributed training')
+parser.add_argument('--rank', default=-1, type=int,
+                    help='node rank for distributed training')
+parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str,
+                    help='url used to set up distributed training')
+parser.add_argument('--dist-backend', default='nccl', type=str,
+                    help='distributed backend')
+parser.add_argument('--multiprocessing-distributed', action='store_true',
+                    help='Use multi-processing distributed training to launch '
+                         'N processes per node, which has N GPUs. This is the '
+                         'fastest way to use PyTorch for either single node or '
+                         'multi node data parallel training')
 # KD
 parser.add_argument('--use-kd', action='store_true', default=False,
                     help='whether to use kd')
@@ -438,7 +453,7 @@ def get_qat_model(model, args):
                 "per_channel": args.wq_per_channel,
                 "normalize_first": False,
                 "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
-                "apot": True,
+                "apot": False,
             }
             wcfg.update(wq)
             acfg = {
@@ -481,26 +496,63 @@ def get_qat_model(model, args):
     
 
 def main():
-    setup_default_logging()
     args, args_text = _parse_args()
-    handler = RotatingFileHandler(args.log_name+'.log', maxBytes=10*1024*1024, backupCount=5)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    _logger.addHandler(handler)
     if args.log_wandb:
         if has_wandb:
             wandb.init(project=args.experiment, config=args)
         else:
             _logger.warning("You've requested to log metrics to wandb but package not found. "
                             "Metrics not being logged to wandb, try `pip install wandb`")
+    random_seed(args.seed, args.rank)
     args.prefetcher = not args.no_prefetcher
-    args.distributed = False
-    if 'WORLD_SIZE' in os.environ:
-        args.distributed = int(os.environ['WORLD_SIZE']) > 1
-    args.device = 'cuda:0'
-    args.world_size = 1
-    args.rank = 0  # global rank
-    assert args.rank >= 0
+
+    if args.dist_url == "env://" and args.world_size == -1:
+        args.world_size = int(os.environ["WORLD_SIZE"])
+
+    args.distributed = args.world_size > 1 or args.multiprocessing_distributed
+
+    if torch.cuda.is_available():
+        ngpus_per_node = torch.cuda.device_count()
+        if ngpus_per_node == 1 and args.dist_backend == "nccl":
+            warnings.warn("nccl backend >=2.5 requires GPU count>1, see https://github.com/NVIDIA/nccl/issues/103 perhaps use 'gloo'")
+    else:
+        ngpus_per_node = 1
+
+    if args.multiprocessing_distributed:
+        # Since we have ngpus_per_node processes per node, the total world_size
+        # needs to be adjusted accordingly
+        args.world_size = ngpus_per_node * args.world_size
+        # _logger.info(str(args.world_size))
+        # Use torch.multiprocessing.spawn to launch distributed processes: the
+        # main_worker process function
+        mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args, args_text))
+    else:
+        # Simply call main_worker function
+        main_worker(None, ngpus_per_node, args, args_text)
+
+
+
+def main_worker(gpu, ngpus_per_node, args, args_text):
+    setup_default_logging()
+    handler = RotatingFileHandler(args.log_name+'.log', maxBytes=10*1024*1024, backupCount=5)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    _logger.addHandler(handler)
+    args.gpu = gpu
+    main_gpu = 0
+    _logger.info("begin")
+    if args.gpu is not None:
+        _logger.info(f'Use GPU: {args.gpu} for training')
+    _logger.info(f'rank: {args.rank}')
+    if args.distributed:
+        if args.dist_url == "env://" and args.rank == -1:
+            args.rank = int(os.environ["RANK"])
+        if args.multiprocessing_distributed:
+            # For multiprocessing distributed training, rank needs to be the
+            # global rank among all the processes
+            args.rank = args.rank * ngpus_per_node + gpu
+        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+                                world_size=args.world_size, rank=args.rank)
 
     # resolve AMP arguments based on PyTorch / Apex availability
     use_amp = None
@@ -518,11 +570,10 @@ def main():
         _logger.warning("Neither APEX or native Torch AMP is available, using float32. "
                         "Install NVIDA apex or upgrade to PyTorch 1.6")
 
-    random_seed(args.seed, args.rank)
+    
     teacher = None
     if args.use_kd:
         teacher = create_teacher_model(args)
-        teacher.cuda()
     model = create_model(
         args.model,
         pretrained=args.pretrained,
@@ -545,7 +596,7 @@ def main():
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
 
-    if args.local_rank == 0:
+    if args.gpu == main_gpu:
         _logger.info(
             f'Model {safe_model_name(args.model)} created, param count:{sum([m.numel() for m in model.parameters()])}')
 
@@ -558,7 +609,17 @@ def main():
         num_aug_splits = args.aug_splits
     # _logger.info('Get QAT model...')
     model = get_qat_model(model, args)
-    # _logger.info(model)
+    # def _set_module(model, submodule_key, module):
+    #     tokens = submodule_key.split('.')
+    #     sub_tokens = tokens[:-1]
+    #     cur_mod = model
+    #     for s in sub_tokens:
+    #         cur_mod = getattr(cur_mod, s)
+    #     setattr(cur_mod, tokens[-1], module)
+    # for name,layer in model.named_modules():
+    #     if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.BatchNorm2d):
+    #         _set_module(model,name,nn.Sequential())
+    
     # exit(0)
     # enable split bn (separate bn stats per batch-portion)
     if args.split_bn:
@@ -566,7 +627,6 @@ def main():
         model = convert_splitbn_model(model, max(num_aug_splits, 2))
     
     # move model to GPU, enable channels last layout if set
-    model.cuda()
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
@@ -574,7 +634,51 @@ def main():
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
         assert not args.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
         model = torch.jit.script(model)
-
+    if args.distributed:
+        if torch.cuda.is_available():
+            if args.gpu is not None:
+                torch.cuda.set_device(args.gpu)
+                model.cuda(args.gpu)
+                if args.use_kd:
+                    teacher.cuda(args.gpu)
+                # When using a single GPU per process and per
+                # DistributedDataParallel, we need to divide the batch size
+                # ourselves based on the total number of GPUs of the current node.
+                args.batch_size = int(args.batch_size / ngpus_per_node)
+                args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
+                model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
+            else:
+                model.cuda()
+                teacher.cuda()
+                # DistributedDataParallel will divide and allocate batch_size to all
+                # available GPUs if device_ids are not set
+                model = torch.nn.parallel.DistributedDataParallel(model)
+            if args.sync_bn:
+                assert not args.split_bn
+                if has_apex and use_amp != 'native':
+                    # Apex SyncBN preferred unless native amp is activated
+                    model = convert_syncbn_model(model)
+                else:
+                    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+                if args.rank == 0:
+                    _logger.info(
+                        'Converted model to use Synchronized BatchNorm. WARNING: You may have issues if using '
+                        'zero initialized BN layers (enabled by default for ResNets) while sync-bn enabled.')
+    else:
+        model.cuda()
+        if args.use_kd:
+            teacher.cuda()  
+    if args.gpu == main_gpu:
+        _logger.info(model)
+    if torch.cuda.is_available():
+        if args.gpu:
+            device = torch.device('cuda:{}'.format(args.gpu))
+        else:
+            device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")  
     optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
 
     # setup automatic mixed-precision (AMP) loss scaling and op casting
@@ -583,15 +687,15 @@ def main():
     if use_amp == 'apex':
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
         loss_scaler = ApexScaler()
-        if args.local_rank == 0:
+        if args.gpu == main_gpu:
             _logger.info('Using NVIDIA APEX AMP. Training in mixed precision.')
     elif use_amp == 'native':
         amp_autocast = torch.cuda.amp.autocast
         loss_scaler = NativeScaler()
-        if args.local_rank == 0:
+        if args.gpu == main_gpu:
             _logger.info('Using native Torch AMP. Training in mixed precision.')
     else:
-        if args.local_rank == 0:
+        if args.gpu == main_gpu:
             _logger.info('AMP not enabled. Training in float32.')
 
     # setup exponential moving average of model weights, SWA could be used here too
@@ -612,7 +716,7 @@ def main():
     if lr_scheduler is not None and start_epoch > 0:
         lr_scheduler.step(start_epoch)
 
-    if args.local_rank == 0:
+    if args.gpu == main_gpu:
         _logger.info('Scheduled epochs: {}'.format(num_epochs))
 
     # create the train and eval datasets
@@ -692,18 +796,18 @@ def main():
     # setup loss function
     if args.jsd:
         assert num_aug_splits > 1  # JSD only valid with aug splits set
-        train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing).cuda()
+        train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing).cuda(device)
     elif mixup_active:
         # smoothing is handled with mixup target transform
-        train_loss_fn = SoftTargetCrossEntropy().cuda()
+        train_loss_fn = SoftTargetCrossEntropy().cuda(device)
     elif args.smoothing:
-        train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing).cuda()
+        train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing).cuda(device)
     else:
-        train_loss_fn = nn.CrossEntropyLoss().cuda()
+        train_loss_fn = nn.CrossEntropyLoss().cuda(device)
     train_loss_fn_kd = None
     if args.use_kd:    
-        train_loss_fn_kd = KLLossSoft().cuda()
-    validate_loss_fn = nn.CrossEntropyLoss().cuda()
+        train_loss_fn_kd = KLLossSoft().cuda(device)
+    validate_loss_fn = nn.CrossEntropyLoss().cuda(device)
     
     # _logger.info("model:"+str(model))
     if args.use_kd:
@@ -740,7 +844,7 @@ def main():
     best_epoch = None
     saver = None
     output_dir = None
-    if args.rank == 0:
+    if args.gpu == main_gpu:
         if args.experiment:
             exp_name = args.experiment
         else:
@@ -756,9 +860,9 @@ def main():
             checkpoint_dir=output_dir, recovery_dir=output_dir, decreasing=decreasing, max_history=args.checkpoint_hist)
         with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
             f.write(args_text)
-    with open(os.path.join(output_dir, 'model.txt'), 'w') as f:
+        with open(os.path.join(output_dir, 'model.txt'), 'w') as f:
             f.write(str(model))
-    _logger.info(model)
+        _logger.info(model)
     try:
         for epoch in range(start_epoch, num_epochs):
             if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
@@ -803,12 +907,6 @@ def main():
     if best_metric is not None:
         _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
 
-
-def backward_hook(module, grad_input, grad_output):
-    if module.output_grad is None:
-        module.output_grad = grad_output[0]
-    else:
-        module.output_grad += grad_output[0]
 
 def train_one_epoch(
         epoch, model, loader, optimizer, loss_fn, args,

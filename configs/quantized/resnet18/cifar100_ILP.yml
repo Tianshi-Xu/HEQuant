@@ -39,7 +39,7 @@ opt: adamw
 smoothing: 0.1
 workers: 4
 log_name: resnet18_c100_ILP
-budget: 3
+budget: 4
 use_kd: true
 kd_alpha: 4
 teacher: ResNet18

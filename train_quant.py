@@ -522,6 +522,7 @@ def main():
         # Since we have ngpus_per_node processes per node, the total world_size
         # needs to be adjusted accordingly
         args.world_size = ngpus_per_node * args.world_size
+        args.lr *= args.world_size
         # _logger.info(str(args.world_size))
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
@@ -609,18 +610,7 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
         num_aug_splits = args.aug_splits
     # _logger.info('Get QAT model...')
     model = get_qat_model(model, args)
-    # def _set_module(model, submodule_key, module):
-    #     tokens = submodule_key.split('.')
-    #     sub_tokens = tokens[:-1]
-    #     cur_mod = model
-    #     for s in sub_tokens:
-    #         cur_mod = getattr(cur_mod, s)
-    #     setattr(cur_mod, tokens[-1], module)
-    # for name,layer in model.named_modules():
-    #     if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.BatchNorm2d):
-    #         _set_module(model,name,nn.Sequential())
     
-    # exit(0)
     # enable split bn (separate bn stats per batch-portion)
     if args.split_bn:
         assert num_aug_splits > 1 or args.resplit
@@ -708,7 +698,9 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
             load_checkpoint(model_ema.module, args.resume, use_ema=True)
 
     # setup learning rate schedule and starting epoch
-    lr_scheduler, num_epochs = create_scheduler(args, optimizer)
+    # lr_scheduler, num_epochs = create_scheduler(args, optimizer)
+    num_epochs = args.epochs
+    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step : (1.0-step/args.epochs), last_epoch=-1)
     start_epoch = 0
     if args.start_epoch is not None:
         # a specified start_epoch will always override the resume epoch
@@ -777,7 +769,6 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
         pin_memory=args.pin_mem,
         use_multi_epochs_loader=args.use_multi_epochs_loader
     )
-
     loader_eval = create_loader(
         dataset_eval,
         input_size=data_config['input_size'],
@@ -890,7 +881,8 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
 
             if lr_scheduler is not None:
                 # step LR for next epoch
-                lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
+                # lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
+                lr_scheduler.step()
 
             if output_dir is not None:
                 update_summary(
@@ -1013,15 +1005,15 @@ def train_one_epoch(
                 last_batch or (batch_idx + 1) % args.recovery_interval == 0):
             saver.save_recovery(epoch, batch_idx=batch_idx)
 
-        if lr_scheduler is not None:
-            lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
+        # if lr_scheduler is not None:
+        #     # lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
+        #     lr_scheduler.step()
 
         end = time.time()
         # end for
 
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
-
     return OrderedDict([('loss', losses_m.avg)])
 
 

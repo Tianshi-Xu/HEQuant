@@ -2,7 +2,8 @@ dataset: imagenet
 num_classes: 1000
 train_split: train
 val_split: validation
-img_size: 224
+batch_size: 1024
+img_size: 256
 mean:
     - 0.485
     - 0.456
@@ -11,70 +12,39 @@ std:
     - 0.229
     - 0.224
     - 0.225
-scale:
-    - 0
-    - 1.0
-interpolation: bicubic
-train_interpolation: random
-aa: rand-m9-mstd0.5-inc1
-mixup: 0
-mixup_off_epoch: 0
-mixup_prob: 1.0
-mixup_mode: batch
-mixup_switch_prob: 0.5
-cutmix: 0
-reprob: 0.25
-remode: pixel
-amp: True
-batch_size: 512
-lr: 0.01
-min_lr: 1e-5
-sched: cosine
-weight_decay: 1e-4
-epochs: 100
-cooldown_epochs: 0
-warmup_epochs: 0
-warmup_lr: 1.0e-06
+lr: 0.04
 opt: sgd
 smoothing: 0.1
-workers: 4
-split_bn: False
-sync_bn: True
+weight-decay: 1e-4
+epochs: 20
+workers: 2
 world_size: 1
 multiprocessing_distributed: True
 dist_url: 'tcp://127.0.0.1:9087'
 dist_backend: "nccl"
 rank: 0
-log_name: image_test
-
-use_kd: false
-kd_alpha: 4
+log_name: image_test4
+checkpoint_hist: 1
+sync_bn: True
+use_kd: True
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth
 initial_checkpoint: pretrained/resnet18_image.pth
-
 powerof2: True
 
 wq_per_channel: True
 wq_enable: True
 wq_mode: "LSQ"
-wq_bitw: 8
-#wq_pos: 1
-#wq_neg: -1
+wq_bitw: 4
 aq_enable: True
 aq_asym: True
 aq_mode: "LSQ"
-aq_bitw: 8
-#aq_pos: 1
-#aq_neg: -1
+aq_bitw: 4
 resq_enable: True
 resq_mode: "LSQ"
-resq_bitw: 8
-#resq_pos: 1
-#resq_neg: -1
-#use_relu: True
+resq_bitw: 16
 qmodules: 
-  - "conv1;wq:bit:16;aq:bit:16"
+#   - "convbn_first;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"
   - "layer1.0.convbn2"
   - "layer1.1.convbn1"
@@ -94,7 +64,7 @@ qmodules:
   # - "layer4.0.shortcut.0"
   - "layer4.1.convbn1"
   - "layer4.1.convbn2"
-  - fc;wq:bit:16;aq:bit:16
+#   - fc;wq:bit:8;aq:bit:8
 resq_modules:
     - relu
     - layer1.0.relu2

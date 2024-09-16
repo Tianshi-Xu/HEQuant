@@ -2,7 +2,7 @@ dataset: imagenet
 num_classes: 1000
 train_split: train
 val_split: validation
-batch_size: 1024
+batch_size: 512
 img_size: 256
 mean:
     - 0.485
@@ -22,23 +22,40 @@ scale:
     - 0.08
     - 1.0
 lr: 0.01
+<<<<<<< HEAD
 min_lr: 1e-4
 sched: cosine
+=======
+min_lr: 2e-4
+sched: cosine
+warmup_epochs: 0
+>>>>>>> da9d3e522643f275202c39b8ecd1c004eff44bf7
 opt: sgd
 smoothing: 0.1
 weight-decay: 1e-4
 epochs: 60
+<<<<<<< HEAD
 decay_epochs: 40
 warmup_epochs: 0
 workers: 2
+=======
+workers: 4
+>>>>>>> da9d3e522643f275202c39b8ecd1c004eff44bf7
 world_size: 1
 multiprocessing_distributed: True
 dist_url: 'tcp://127.0.0.1:9087'
 dist_backend: "nccl"
 rank: 0
+<<<<<<< HEAD
 log_name: image_test5
+=======
+log_name: image_test3
+>>>>>>> da9d3e522643f275202c39b8ecd1c004eff44bf7
 checkpoint_hist: 1
 sync_bn: True
+pin_mem: True
+no_prefetcher: False
+
 use_kd: True
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth

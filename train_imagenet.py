@@ -58,7 +58,7 @@ parser.add_argument('-b', '--batch-size', default=1024, type=int,
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
                          'using Data Parallel or Distributed Data Parallel')
-parser.add_argument('--data', metavar='DATA_PATH', default='./data/',
+parser.add_argument('--data', metavar='DATA_PATH', default='/data1/share/imagenet',
                     help='path to imagenet data (default: ./data/)')
 parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
                     metavar='LR', help='initial learning rate', dest='lr')
@@ -273,6 +273,7 @@ def get_qat_model(model, args):
 
 def main():
     args, args_text = _parse_args()
+    _logger.info(args)
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
@@ -454,8 +455,7 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.use_kd:
         _logger.info("Verifying teacher model")
         # validate(val_loader, teacher, validate_loss_fn, args)
-    if args.gpu == 0:
-        _logger.info(model)
+
     if args.initial_checkpoint != "":
         _logger.info("Verifying initial model in training dataset")
         # validate(val_loader, model, validate_loss_fn, args)
@@ -470,6 +470,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 layer.quan_w_fn.set_bw(bw_list[idx])
                 layer.quan_a_fn.set_bw(ba_list[idx])
                 idx += 1
+    if args.gpu == 0:
+        _logger.info(model)
     for epoch in range(args.start_epoch, args.epochs):
         # if args.distributed:
         #     train_sampler.set_epoch(epoch)

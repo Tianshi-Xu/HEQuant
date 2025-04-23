@@ -20,34 +20,31 @@ import time
 import yaml
 import os
 import logging
-import warnings
 from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from src.utils.hess.myhessian import hessian # Hessian computation
 import numpy as np
-import torch.multiprocessing as mp
 import torch
 import torch.nn as nn
 import torchvision.utils
-import torch.distributed as dist
 import math
-from torch.nn.parallel import DistributedDataParallel as NativeDDP
+import util.misc as misc
+from torch.nn.parallel import DistributedDataParallel
 
 from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
 from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, \
      model_parameters
-from timm.models.layers import convert_splitbn_model
-from timm.utils import *
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, JsdCrossEntropy
+from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler
-from timm.utils import ApexScaler, NativeScaler
-
+from timm.utils import ApexScaler, NativeScaler, setup_default_logging, ModelEmaV2, get_outdir, distribute_bn, CheckpointSaver, update_summary,AverageMeter,dispatch_clip_grad, accuracy, reduce_tensor
+from util.misc import NativeScalerWithGradNormCount as NativeScaler
 from src.quantization.modules.conv import QConv2d, QConvBn2d
 from src import *
 from src.quantization.utils import KLLossSoft
+from util.datasets import build_dataset
 try:
     from apex import amp
     from apex.parallel import DistributedDataParallel as ApexDDP
@@ -66,7 +63,6 @@ except AttributeError:
 
 try:
     import wandb
-
     has_wandb = True
 except ImportError:
     has_wandb = False
@@ -254,16 +250,12 @@ parser.add_argument('--model-ema-decay', type=float, default=0.9998,
                     help='decay factor for model weights moving average (default: 0.9998)')
 
 # Misc
-parser.add_argument('--seed', type=int, default=42, metavar='S',
-                    help='random seed (default: 42)')
 parser.add_argument('--log-interval', type=int, default=50, metavar='N',
                     help='how many batches to wait before logging training status')
 parser.add_argument('--recovery-interval', type=int, default=0, metavar='N',
                     help='how many batches to wait before writing recovery checkpoint')
 parser.add_argument('--checkpoint-hist', type=int, default=10, metavar='N',
                     help='number of checkpoints to keep (default: 10)')
-parser.add_argument('-j', '--workers', type=int, default=4, metavar='N',
-                    help='how many training processes to use (default: 1)')
 parser.add_argument('--save-images', action='store_true', default=False,
                     help='save images of input bathes every log interval for debugging')
 parser.add_argument('--amp', action='store_true', default=False,
@@ -276,8 +268,6 @@ parser.add_argument('--channels-last', action='store_true', default=False,
                     help='Use channels_last memory layout')
 parser.add_argument('--pin-mem', action='store_true', default=False,
                     help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
-parser.add_argument('--no-prefetcher', action='store_true', default=False,
-                    help='disable fast prefetcher')
 parser.add_argument('--output', default='', type=str, metavar='PATH',
                     help='path to output folder (default: none, current dir)')
 parser.add_argument('--experiment', default='', type=str, metavar='NAME',
@@ -286,7 +276,6 @@ parser.add_argument('--eval-metric', default='top1', type=str, metavar='EVAL_MET
                     help='Best metric (default: "top1"')
 parser.add_argument('--tta', type=int, default=0, metavar='N',
                     help='Test/inference time augmentation (oversampling) factor. 0=None (default: 0)')
-parser.add_argument("--local_rank", default=0, type=int)
 parser.add_argument('--use-multi-epochs-loader', action='store_true', default=False,
                     help='use the multi-epochs-loader to save time at the beginning of every epoch')
 parser.add_argument('--torchscript', dest='torchscript', action='store_true',
@@ -345,19 +334,24 @@ parser.add_argument('--aq_asym', action='store_true', default=True,
 parser.add_argument('--powerof2', action='store_true', default=True,
                     help='whether scale is power of 2')
 # distributed train
-parser.add_argument('--world-size', default=-1, type=int,
-                    help='number of nodes for distributed training')
-parser.add_argument('--rank', default=-1, type=int,
-                    help='node rank for distributed training')
-parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str,
-                    help='url used to set up distributed training')
-parser.add_argument('--dist-backend', default='nccl', type=str,
-                    help='distributed backend')
-parser.add_argument('--multiprocessing-distributed', action='store_true',
-                    help='Use multi-processing distributed training to launch '
-                         'N processes per node, which has N GPUs. This is the '
-                         'fastest way to use PyTorch for either single node or '
-                         'multi node data parallel training')
+parser.add_argument(
+    "--world_size", default=1, type=int, help="number of distributed processes"
+)
+parser.add_argument("--local-rank", default=-1, type=int)
+parser.add_argument("--dist_on_itp", action="store_true")
+parser.add_argument(
+    "--dist_url", default="env://", help="url used to set up distributed training"
+)
+parser.add_argument(
+    "--device", default="cuda", help="device to use for training / testing"
+)
+parser.add_argument("--seed", default=0, type=int)
+parser.add_argument(
+    "--dist_eval",
+    action="store_true",
+    default=False,
+    help="Enabling distributed evaluation (recommended during training for faster monitor",
+)
 # KD
 parser.add_argument('--use-kd', action='store_true', default=False,
                     help='whether to use kd')
@@ -499,83 +493,78 @@ def get_qat_model(model, args):
 
 def main():
     args, args_text = _parse_args()
-    if args.log_wandb:
-        if has_wandb:
-            wandb.init(project=args.experiment, config=args)
+    misc.init_distributed_mode(args)
+    global_rank = misc.get_rank()
+    if global_rank == 0:
+        setup_default_logging()
+        handler = RotatingFileHandler(args.log_name+'.log', maxBytes=10*1024*1024, backupCount=5)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        _logger.addHandler(handler)
+        _logger.info(args)
+    args.local_rank = global_rank
+    device = torch.device(args.device)
+    seed = args.seed + misc.get_rank()
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    # build dataset
+    dataset_train = build_dataset(is_train=True, args=args)
+    dataset_eval = build_dataset(is_train=False, args=args)
+    if True:  # args.distributed:
+        num_tasks = misc.get_world_size()
+        global_rank = misc.get_rank()
+        sampler_train = torch.utils.data.DistributedSampler(
+            dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+        )
+        print("Sampler_train = %s" % str(sampler_train))
+        if args.dist_eval:
+            if len(dataset_eval) % num_tasks != 0:
+                print(
+                    "Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. "
+                    "This will slightly alter validation results as extra duplicate entries are added to achieve "
+                    "equal num of samples per-process."
+                )
+            sampler_val = torch.utils.data.DistributedSampler(
+                dataset_eval, num_replicas=num_tasks, rank=global_rank, shuffle=True
+            )  # shuffle=True to reduce monitor bias
         else:
-            _logger.warning("You've requested to log metrics to wandb but package not found. "
-                            "Metrics not being logged to wandb, try `pip install wandb`")
-    random_seed(args.seed, args.rank)
-    args.prefetcher = not args.no_prefetcher
+            sampler_val = torch.utils.data.SequentialSampler(dataset_eval)
+            
+    data_loader_train = torch.utils.data.DataLoader(
+        dataset_train,
+        sampler=sampler_train,
+        batch_size=args.batch_size,
+        num_workers=args.workers,
+        pin_memory=args.pin_mem,
+        drop_last=True,
+    )
 
-    if args.dist_url == "env://" and args.world_size == -1:
-        args.world_size = int(os.environ["WORLD_SIZE"])
-
-    args.distributed = args.world_size > 1 or args.multiprocessing_distributed
-
-    if torch.cuda.is_available():
-        ngpus_per_node = torch.cuda.device_count()
-        if ngpus_per_node == 1 and args.dist_backend == "nccl":
-            warnings.warn("nccl backend >=2.5 requires GPU count>1, see https://github.com/NVIDIA/nccl/issues/103 perhaps use 'gloo'")
-    else:
-        ngpus_per_node = 1
-
-    if args.multiprocessing_distributed:
-        # Since we have ngpus_per_node processes per node, the total world_size
-        # needs to be adjusted accordingly
-        args.world_size = ngpus_per_node * args.world_size
-        # _logger.info(str(args.world_size))
-        # Use torch.multiprocessing.spawn to launch distributed processes: the
-        # main_worker process function
-        mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args, args_text))
-    else:
-        # Simply call main_worker function
-        main_worker(None, ngpus_per_node, args, args_text)
-
-
-
-def main_worker(gpu, ngpus_per_node, args, args_text):
-    setup_default_logging()
-    handler = RotatingFileHandler(args.log_name+'.log', maxBytes=10*1024*1024, backupCount=5)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    _logger.addHandler(handler)
-    args.gpu = gpu
-    main_gpu = args.gpu
-    _logger.info("begin")
-    if args.gpu is not None:
-        _logger.info(f'Use GPU: {args.gpu} for training')
-    _logger.info(f'rank: {args.rank}')
-    if args.distributed:
-        if args.dist_url == "env://" and args.rank == -1:
-            args.rank = int(os.environ["RANK"])
-        if args.multiprocessing_distributed:
-            # For multiprocessing distributed training, rank needs to be the
-            # global rank among all the processes
-            args.rank = args.rank * ngpus_per_node + gpu
-        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
-                                world_size=args.world_size, rank=args.rank)
-
-    # resolve AMP arguments based on PyTorch / Apex availability
-    use_amp = None
-    if args.amp:
-        # `--amp` chooses native amp before apex (APEX ver not actively maintained)
-        if has_native_amp:
-            args.native_amp = True
-        elif has_apex:
-            args.apex_amp = True
-    if args.apex_amp and has_apex:
-        use_amp = 'apex'
-    elif args.native_amp and has_native_amp:
-        use_amp = 'native'
-    elif args.apex_amp or args.native_amp:
-        _logger.warning("Neither APEX or native Torch AMP is available, using float32. "
-                        "Install NVIDA apex or upgrade to PyTorch 1.6")
-
+    data_loader_val = torch.utils.data.DataLoader(
+        dataset_eval,
+        sampler=sampler_val,
+        batch_size=args.batch_size,
+        num_workers=args.workers,
+        pin_memory=args.pin_mem,
+        drop_last=False,
+    )
     
-    teacher = None
-    if args.use_kd:
-        teacher = create_teacher_model(args)
+    mixup_fn = None
+    mixup_active = args.mixup > 0 or args.cutmix > 0.0 or args.cutmix_minmax is not None
+    if mixup_active:
+        print("Mixup is activated!")
+        mixup_fn = Mixup(
+            mixup_alpha=args.mixup,
+            cutmix_alpha=args.cutmix,
+            cutmix_minmax=args.cutmix_minmax,
+            prob=args.mixup_prob,
+            switch_prob=args.mixup_switch_prob,
+            mode=args.mixup_mode,
+            label_smoothing=args.smoothing,
+            num_classes=args.num_classes,
+        )
+        
+    # build model
     model = create_model(
         args.model,
         pretrained=args.pretrained,
@@ -590,7 +579,6 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
         bn_eps=args.bn_eps,
         scriptable=args.torchscript)
     
-    # print("OK1")
     if args.initial_checkpoint:
         load_checkpoint(model, args.initial_checkpoint,strict=False)
     
@@ -598,33 +586,16 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
 
-    if args.gpu == main_gpu:
+    if global_rank == 0:
         _logger.info(
             f'Model {safe_model_name(args.model)} created, param count:{sum([m.numel() for m in model.parameters()])}')
 
-    data_config = resolve_data_config(vars(args), model=model, verbose=args.local_rank == 0)
-
-    # setup augmentation batch splits for contrastive loss or split bn
-    num_aug_splits = 0
-    if args.aug_splits > 0:
-        assert args.aug_splits > 1, 'A split of 1 makes no sense'
-        num_aug_splits = args.aug_splits
-    # _logger.info('Get QAT model...')
+    teacher = None
+    if args.use_kd:
+        teacher = create_teacher_model(args)
+        
     model = get_qat_model(model, args)
     
-    # enable split bn (separate bn stats per batch-portion)
-    if args.split_bn:
-        assert num_aug_splits > 1 or args.resplit
-        model = convert_splitbn_model(model, max(num_aug_splits, 2))
-    
-    # move model to GPU, enable channels last layout if set
-    if args.channels_last:
-        model = model.to(memory_format=torch.channels_last)
-
-    if args.torchscript:
-        assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
-        assert not args.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
-        model = torch.jit.script(model)
     if args.distributed:
         if torch.cuda.is_available():
             if args.gpu is not None:
@@ -635,6 +606,7 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
                 # When using a single GPU per process and per
                 # DistributedDataParallel, we need to divide the batch size
                 # ourselves based on the total number of GPUs of the current node.
+                ngpus_per_node = 1
                 args.batch_size = int(args.batch_size / ngpus_per_node)
                 args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
                 model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
@@ -646,12 +618,8 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
                 model = torch.nn.parallel.DistributedDataParallel(model)
             if args.sync_bn:
                 assert not args.split_bn
-                if has_apex and use_amp != 'native':
-                    # Apex SyncBN preferred unless native amp is activated
-                    model = convert_syncbn_model(model)
-                else:
-                    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-                if args.rank == 0:
+                model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+                if global_rank == 0:
                     _logger.info(
                         'Converted model to use Synchronized BatchNorm. WARNING: You may have issues if using '
                         'zero initialized BN layers (enabled by default for ResNets) while sync-bn enabled.')
@@ -659,37 +627,11 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
         model.cuda()
         if args.use_kd:
             teacher.cuda()  
-    if args.gpu == main_gpu:
-        _logger.info(model)
-    if torch.cuda.is_available():
-        if args.gpu:
-            device = torch.device('cuda:{}'.format(args.gpu))
-        else:
-            device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")  
     optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
-
-    # setup automatic mixed-precision (AMP) loss scaling and op casting
-    amp_autocast = suppress  # do nothing
-    loss_scaler = None
-    if use_amp == 'apex':
-        model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
-        loss_scaler = ApexScaler()
-        if args.gpu == main_gpu:
-            _logger.info('Using NVIDIA APEX AMP. Training in mixed precision.')
-    elif use_amp == 'native':
-        amp_autocast = torch.cuda.amp.autocast
-        loss_scaler = NativeScaler()
-        if args.gpu == main_gpu:
-            _logger.info('Using native Torch AMP. Training in mixed precision.')
-    else:
-        if args.gpu == main_gpu:
-            _logger.info('AMP not enabled. Training in float32.')
-
-    # setup exponential moving average of model weights, SWA could be used here too
+    amp_autocast = torch.cuda.amp.autocast
+    loss_scaler = NativeScaler()
+    if global_rank == 0:
+        _logger.info('Using native Torch AMP. Training in mixed precision.')
     model_ema = None
     if args.model_ema:
         # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
@@ -697,8 +639,6 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
             model, decay=args.model_ema_decay, device='cpu' if args.model_ema_force_cpu else None)
         if args.resume:
             load_checkpoint(model_ema.module, args.resume, use_ema=True)
-
-    # setup learning rate schedule and starting epoch
     lr_scheduler, num_epochs = create_scheduler(args, optimizer)
     # num_epochs = args.epochs
     # lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step : (1.0-step/args.epochs), last_epoch=-1)
@@ -709,87 +649,10 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
     if lr_scheduler is not None and start_epoch > 0:
         lr_scheduler.step(start_epoch)
 
-    if args.gpu == main_gpu:
+    if global_rank == 0:
         _logger.info('Scheduled epochs: {}'.format(num_epochs))
-
-    # create the train and eval datasets
-    dataset_train = create_dataset(
-        args.dataset,
-        root=args.data_dir, split=args.train_split, is_training=True,
-        batch_size=args.batch_size, repeats=args.epoch_repeats,download=True)
-    dataset_eval = create_dataset(
-        args.dataset, root=args.data_dir, split=args.val_split, is_training=False, batch_size=args.batch_size)
-
-    # setup mixup / cutmix
-    collate_fn = None
-    mixup_fn = None
-    mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
+        
     if mixup_active:
-        mixup_args = dict(
-            mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-            prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-            label_smoothing=args.smoothing, num_classes=args.num_classes)
-        if args.prefetcher:
-            assert not num_aug_splits  # collate conflict (need to support deinterleaving in collate mixup)
-            collate_fn = FastCollateMixup(**mixup_args)
-        else:
-            mixup_fn = Mixup(**mixup_args)
-
-    # wrap dataset in AugMix helper
-    if num_aug_splits > 1:
-        dataset_train = AugMixDataset(dataset_train, num_splits=num_aug_splits)
-
-    # create data loaders w/ augmentation pipeiine
-    train_interpolation = args.train_interpolation
-    if args.no_aug or not train_interpolation:
-        train_interpolation = data_config['interpolation']
-    loader_train = create_loader(
-        dataset_train,
-        input_size=data_config['input_size'],
-        batch_size=args.batch_size,
-        is_training=True,
-        use_prefetcher=args.prefetcher,
-        no_aug=args.no_aug,
-        re_prob=args.reprob,
-        re_mode=args.remode,
-        re_count=args.recount,
-        re_split=args.resplit,
-        scale=args.scale,
-        ratio=args.ratio,
-        hflip=args.hflip,
-        vflip=args.vflip,
-        color_jitter=args.color_jitter,
-        auto_augment=args.aa,
-        num_aug_splits=num_aug_splits,
-        interpolation=train_interpolation,
-        mean=data_config['mean'],
-        std=data_config['std'],
-        num_workers=args.workers,
-        distributed=args.distributed,
-        collate_fn=collate_fn,
-        pin_memory=args.pin_mem,
-        use_multi_epochs_loader=args.use_multi_epochs_loader
-    )
-    loader_eval = create_loader(
-        dataset_eval,
-        input_size=data_config['input_size'],
-        batch_size=args.validation_batch_size_multiplier * args.batch_size,
-        is_training=False,
-        use_prefetcher=args.prefetcher,
-        interpolation=data_config['interpolation'],
-        mean=data_config['mean'],
-        std=data_config['std'],
-        num_workers=args.workers,
-        distributed=args.distributed,
-        crop_pct=data_config['crop_pct'],
-        pin_memory=args.pin_mem,
-    )
-
-    # setup loss function
-    if args.jsd:
-        assert num_aug_splits > 1  # JSD only valid with aug splits set
-        train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing).cuda(device)
-    elif mixup_active:
         # smoothing is handled with mixup target transform
         train_loss_fn = SoftTargetCrossEntropy().cuda(device)
     elif args.smoothing:
@@ -801,13 +664,15 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
         train_loss_fn_kd = KLLossSoft().cuda(device)
     validate_loss_fn = nn.CrossEntropyLoss().cuda(device)
     
-    # _logger.info("model:"+str(model))
     if args.use_kd:
-        _logger.info("Verifying teacher model")
-        validate(teacher, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+        if global_rank == 0:
+            _logger.info("Verifying teacher model")
+        validate(teacher, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast)
     if args.initial_checkpoint != "":
-        _logger.info("Verifying initial model in training dataset")
-        validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+        if global_rank == 0:
+            _logger.info("Verifying initial model in test dataset")
+            _logger.info(model.device)
+        # validate(model, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast)
     if args.bw_list != "":
         bw_list = [int(x) for x in args.bw_list.split(',')]
         ba_list = [int(x) for x in args.ba_list.split(',')]
@@ -819,98 +684,78 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
                 layer.quan_w_fn.set_bw(bw_list[idx])
                 layer.quan_a_fn.set_bw(ba_list[idx])
                 idx += 1
-            
+    if global_rank == 0:
+        _logger.info(model)
     # setup checkpoint saver and eval metric tracking
-    if args.rank == 0:
-        if args.experiment:
-            exp_name = args.experiment
-        else:
-            exp_name = '-'.join([
-                datetime.now().strftime("%Y%m%d-%H%M%S"),
-                safe_model_name(args.model),
-                str(data_config['input_size'][-1])
-            ])
-    
+    data_config = resolve_data_config(vars(args), model=model, verbose=True)
+    if args.experiment:
+        exp_name = args.experiment
+    else:
+        exp_name = '-'.join([
+            datetime.now().strftime("%Y%m%d-%H%M%S"),
+            safe_model_name(args.model),
+            str(data_config['input_size'][-1])
+        ])
+    output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
     eval_metric = args.eval_metric
-    best_metric = None
-    best_epoch = None
-    saver = None
-    output_dir = None
-    print("args.gpu: ", args.gpu)
-    if args.gpu == main_gpu:
-        if args.experiment:
-            exp_name = args.experiment
-        else:
-            exp_name = '-'.join([
-                datetime.now().strftime("%Y%m%d-%H%M%S"),
-                safe_model_name(args.model),
-                str(data_config['input_size'][-1])
-            ])
-        output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
-        decreasing = True if eval_metric == 'loss' else False
-        saver = CheckpointSaver(
-            model=model, optimizer=optimizer, args=args, model_ema=model_ema, amp_scaler=loss_scaler,
-            checkpoint_dir=output_dir, recovery_dir=output_dir, decreasing=decreasing, max_history=args.checkpoint_hist)
+    decreasing = True if eval_metric == 'loss' else False
+    saver = CheckpointSaver(
+        model=model, optimizer=optimizer, args=args, model_ema=model_ema, amp_scaler=loss_scaler,
+        checkpoint_dir=output_dir, recovery_dir=output_dir, decreasing=decreasing, max_history=args.checkpoint_hist)
+    if global_rank == 0:
         with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
             f.write(args_text)
         with open(os.path.join(output_dir, 'model.txt'), 'w') as f:
             f.write(str(model))
-        _logger.info(model)
-    try:
-        print("saver: ", saver)
-        for epoch in range(start_epoch, num_epochs):
-            if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
-                loader_train.sampler.set_epoch(epoch)
 
-            train_metrics = train_one_epoch(
-                epoch, model, loader_train, optimizer, train_loss_fn, args,
-                lr_scheduler=lr_scheduler, saver=saver, output_dir=output_dir,
-                amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
+    for epoch in range(start_epoch, num_epochs):
+        if args.distributed and hasattr(data_loader_train.sampler, 'set_epoch'):
+            data_loader_train.sampler.set_epoch(epoch)
 
+        train_metrics = train_one_epoch(
+            epoch, model, data_loader_train, optimizer, train_loss_fn, args,
+            lr_scheduler=lr_scheduler, saver=saver, output_dir=output_dir,
+            amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
+
+        if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
+            if global_rank == 0:
+                _logger.info("Distributing BatchNorm running means and vars")
+            distribute_bn(model, args.world_size, args.dist_bn == 'reduce')
+
+        eval_metrics = validate(model, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast)
+
+        if model_ema is not None and not args.model_ema_force_cpu:
             if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
-                if args.local_rank == 0:
-                    _logger.info("Distributing BatchNorm running means and vars")
-                distribute_bn(model, args.world_size, args.dist_bn == 'reduce')
+                distribute_bn(model_ema, args.world_size, args.dist_bn == 'reduce')
+            ema_eval_metrics = validate(
+                model_ema.module, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast,
+                log_suffix=' (EMA)')
+            eval_metrics = ema_eval_metrics
 
-            eval_metrics = validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+        if lr_scheduler is not None:
+            # step LR for next epoch
+            lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
+            # lr_scheduler.step()
 
-            if model_ema is not None and not args.model_ema_force_cpu:
-                if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
-                    distribute_bn(model_ema, args.world_size, args.dist_bn == 'reduce')
-                ema_eval_metrics = validate(
-                    model_ema.module, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast,
-                    log_suffix=' (EMA)')
-                eval_metrics = ema_eval_metrics
-
-            if lr_scheduler is not None:
-                # step LR for next epoch
-                lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
-                # lr_scheduler.step()
-
-            if output_dir is not None:
-                update_summary(
-                    epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
-                    write_header=best_metric is None, log_wandb=args.log_wandb and has_wandb)
-            
-            if saver is not None:
-                # save proper checkpoint with eval metric
-                save_metric = eval_metrics[eval_metric]
-                best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
-
-    except KeyboardInterrupt:
-        pass
-    if best_metric is not None:
-        _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
-
+        if output_dir is not None:
+            update_summary(
+                epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
+                write_header=best_metric is None, log_wandb=args.log_wandb and has_wandb)
+        
+        if saver is not None:
+            # save proper checkpoint with eval metric
+            save_metric = eval_metrics[eval_metric]
+            best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
+        if best_metric is not None and global_rank == 0:
+            _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
+    
 
 def train_one_epoch(
         epoch, model, loader, optimizer, loss_fn, args,
         lr_scheduler=None, saver=None, output_dir=None, amp_autocast=suppress,
         loss_scaler=None, model_ema=None, mixup_fn=None, teacher=None, loss_fn_kd=None):
     if args.mixup_off_epoch and epoch >= args.mixup_off_epoch:
-        if args.prefetcher and loader.mixup_enabled:
-            loader.mixup_enabled = False
-        elif mixup_fn is not None:
+        if mixup_fn is not None:
             mixup_fn.mixup_enabled = False
 
     second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
@@ -926,12 +771,9 @@ def train_one_epoch(
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
-        if not args.prefetcher:
-            input, target = input.cuda(), target.cuda()
-            if mixup_fn is not None:
-                input, target = mixup_fn(input, target)
-        if args.channels_last:
-            input = input.contiguous(memory_format=torch.channels_last)
+        input, target = input.cuda(), target.cuda()
+        if mixup_fn is not None:
+            input, target = mixup_fn(input, target)
 
         with amp_autocast():
             input, target = input.cuda(), target.cuda()
@@ -954,9 +796,9 @@ def train_one_epoch(
         if loss_scaler is not None:
             loss_scaler(
                 loss, optimizer,
-                clip_grad=args.clip_grad, clip_mode=args.clip_mode,
-                parameters=model_parameters(model, exclude_head='agc' in args.clip_mode),
-                create_graph=second_order)
+                clip_grad=args.clip_grad,
+                parameters=model.parameters(),
+                create_graph=False)
         else:
             loss.backward(create_graph=second_order)
             if args.clip_grad is not None:
@@ -1033,11 +875,8 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(loader):
             last_batch = batch_idx == last_idx
-            if not args.prefetcher:
-                input = input.cuda()
-                target = target.cuda()
-            if args.channels_last:
-                input = input.contiguous(memory_format=torch.channels_last)
+            input = input.cuda()
+            target = target.cuda()
 
             with amp_autocast():
                 output = model(input)

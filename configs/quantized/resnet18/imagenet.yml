@@ -1,9 +1,9 @@
-dataset: imagenet
+dataset: image_folder
 num_classes: 1000
 train_split: train
 val_split: validation
-batch_size: 512
-img_size: 256
+batch_size: 128
+img_size: 224
 mean:
     - 0.485
     - 0.456
@@ -27,7 +27,7 @@ sched: cosine
 opt: sgd
 smoothing: 0.1
 weight-decay: 1e-4
-epochs: 60
+epochs: 200
 workers: 4
 world_size: 1
 multiprocessing_distributed: True
@@ -38,27 +38,29 @@ log_name: image_test3
 checkpoint_hist: 1
 sync_bn: True
 pin_mem: True
-no_prefetcher: False
 
-use_kd: True
+use_kd: False
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth
 initial_checkpoint: pretrained/resnet18_image.pth
 powerof2: True
-
+log_name: resnet18_imagenet
 wq_per_channel: True
 wq_enable: True
 wq_mode: "LSQ"
-wq_bitw: 4
+wq_bitw: 32
 aq_enable: True
 aq_asym: True
 aq_mode: "LSQ"
-aq_bitw: 4
+aq_bitw: 32
 resq_enable: True
 resq_mode: "LSQ"
 resq_bitw: 16
+# w4a4
+bw_list: 4, 4, 4, 4, 4, 3, 4, 3, 3, 4, 3, 3, 3, 3, 2, 3
+ba_list: 4, 4, 4, 4, 4, 4, 3, 4, 4, 2, 3, 3, 3, 2, 3, 2
 qmodules: 
-#   - "convbn_first;wq:bit:8;aq:bit:8"
+  - "convbn_first;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"
   - "layer1.0.convbn2"
   - "layer1.1.convbn1"
@@ -78,7 +80,7 @@ qmodules:
   # - "layer4.0.shortcut.0"
   - "layer4.1.convbn1"
   - "layer4.1.convbn2"
-#   - fc;wq:bit:8;aq:bit:8
+  - fc;wq:bit:8;aq:bit:8
 resq_modules:
     - relu
     - layer1.0.relu2

@@ -708,7 +708,7 @@ def main():
             f.write(args_text)
         with open(os.path.join(output_dir, 'model.txt'), 'w') as f:
             f.write(str(model))
-
+    max_acc = 0
     for epoch in range(start_epoch, num_epochs):
         if args.distributed and hasattr(data_loader_train.sampler, 'set_epoch'):
             data_loader_train.sampler.set_epoch(epoch)
@@ -739,7 +739,10 @@ def main():
             # lr_scheduler.step()
         if global_rank == 0:
             misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="last.pth.tar")
-        
+        if eval_metrics[eval_metric] > max_acc:
+            max_acc = eval_metrics[eval_metric]
+            if global_rank == 0:
+                misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="best.pth.tar")
             
     
 
@@ -838,10 +841,6 @@ def train_one_epoch(
                         os.path.join(output_dir, 'train-batch-%d.jpg' % batch_idx),
                         padding=0,
                         normalize=True)
-
-        if saver is not None and args.recovery_interval and (
-                last_batch or (batch_idx + 1) % args.recovery_interval == 0):
-            saver.save_recovery(epoch, batch_idx=batch_idx)
 
         if lr_scheduler is not None:
             lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)

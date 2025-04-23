@@ -153,11 +153,11 @@ def ResNet152():
 
 def test():
     net = ResNet18(num_classes=1000)
-    net.load_state_dict(torch.load("/home/xts/code/HEQuant/pretrained/resnet18_image.pth"),strict=False)
+    # net.load_state_dict(torch.load("/home/xts/code/HEQuant/pretrained/resnet18_image.pth"),strict=False)
     # y = net(torch.randn(1, 3, 32, 32))
     # print(net)
     # for name,layer in net.named_modules():
     #     print(name)
         # print(layer)
     # net = resnet18(weights=ResNet18_Weights.DEFAULT)
-test()
+# test()

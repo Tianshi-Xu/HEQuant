@@ -340,7 +340,7 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler):
         checkpoint_paths = [output_dir / ("checkpoint-%s.pth" % epoch_name)]
         for checkpoint_path in checkpoint_paths:
             to_save = {
-                "model": model_without_ddp.state_dict(),
+                "state_dict": model_without_ddp.state_dict(),
                 "optimizer": optimizer.state_dict(),
                 "epoch": epoch,
                 "scaler": loss_scaler.state_dict(),
@@ -364,8 +364,9 @@ def load_model(args, model_without_ddp, optimizer, loss_scaler):
                 args.resume, map_location="cpu", check_hash=True
             )
         else:
-            checkpoint = torch.load(args.resume, map_location="cpu")
-        model_without_ddp.load_state_dict(checkpoint["model"])
+            checkpoint = torch.load(args.resume, map_location="cpu",weights_only=False)
+        # print(checkpoint.keys())
+        model_without_ddp.load_state_dict(checkpoint["state_dict"])
         print("Resume checkpoint %s" % args.resume)
         if (
             "optimizer" in checkpoint
@@ -376,6 +377,8 @@ def load_model(args, model_without_ddp, optimizer, loss_scaler):
             args.start_epoch = checkpoint["epoch"] + 1
             if "scaler" in checkpoint:
                 loss_scaler.load_state_dict(checkpoint["scaler"])
+            if "amp_scaler" in checkpoint:
+                loss_scaler.load_state_dict(checkpoint["amp_scaler"])
             print("With optim & sched!")
 
 

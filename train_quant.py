@@ -493,8 +493,10 @@ def get_qat_model(model, args):
 
 def main():
     args, args_text = _parse_args()
+    print(args)
     misc.init_distributed_mode(args)
     global_rank = misc.get_rank()
+    print(global_rank)
     if global_rank == 0:
         setup_default_logging()
         handler = RotatingFileHandler(args.log_name+'.log', maxBytes=10*1024*1024, backupCount=5)
@@ -627,6 +629,7 @@ def main():
         model.cuda()
         if args.use_kd:
             teacher.cuda()  
+    model_without_ddp = model.module if args.distributed else model
     optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
     amp_autocast = torch.cuda.amp.autocast
     loss_scaler = NativeScaler()
@@ -639,6 +642,7 @@ def main():
             model, decay=args.model_ema_decay, device='cpu' if args.model_ema_force_cpu else None)
         if args.resume:
             load_checkpoint(model_ema.module, args.resume, use_ema=True)
+    misc.load_model(args=args,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler)
     lr_scheduler, num_epochs = create_scheduler(args, optimizer)
     # num_epochs = args.epochs
     # lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step : (1.0-step/args.epochs), last_epoch=-1)
@@ -697,11 +701,8 @@ def main():
             str(data_config['input_size'][-1])
         ])
     output_dir = get_outdir(args.output if args.output else './output/train', exp_name)
+    args.output_dir = output_dir
     eval_metric = args.eval_metric
-    decreasing = True if eval_metric == 'loss' else False
-    saver = CheckpointSaver(
-        model=model, optimizer=optimizer, args=args, model_ema=model_ema, amp_scaler=loss_scaler,
-        checkpoint_dir=output_dir, recovery_dir=output_dir, decreasing=decreasing, max_history=args.checkpoint_hist)
     if global_rank == 0:
         with open(os.path.join(output_dir, 'args.yaml'), 'w') as f:
             f.write(args_text)
@@ -714,7 +715,7 @@ def main():
 
         train_metrics = train_one_epoch(
             epoch, model, data_loader_train, optimizer, train_loss_fn, args,
-            lr_scheduler=lr_scheduler, saver=saver, output_dir=output_dir,
+            lr_scheduler=lr_scheduler, output_dir=output_dir,
             amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
 
         if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
@@ -736,18 +737,10 @@ def main():
             # step LR for next epoch
             lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
             # lr_scheduler.step()
-
-        if output_dir is not None:
-            update_summary(
-                epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
-                write_header=best_metric is None, log_wandb=args.log_wandb and has_wandb)
+        if global_rank == 0:
+            misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="last.pth.tar")
         
-        if saver is not None:
-            # save proper checkpoint with eval metric
-            save_metric = eval_metrics[eval_metric]
-            best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
-        if best_metric is not None and global_rank == 0:
-            _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
+            
     
 
 def train_one_epoch(

@@ -2,7 +2,7 @@ dataset: image_folder
 num_classes: 1000
 train_split: train
 val_split: validation
-batch_size: 128
+batch_size: 1024
 img_size: 224
 mean:
     - 0.485
@@ -23,6 +23,7 @@ scale:
     - 1.0
 lr: 0.01
 min_lr: 1e-4
+warmup_epochs: 10
 sched: cosine
 opt: sgd
 smoothing: 0.1
@@ -31,10 +32,8 @@ epochs: 200
 workers: 4
 world_size: 1
 multiprocessing_distributed: True
-dist_url: 'tcp://127.0.0.1:8087'
-dist_backend: "nccl"
-rank: 0
-log_name: image_test3
+
+
 checkpoint_hist: 1
 sync_bn: True
 pin_mem: True
@@ -43,6 +42,7 @@ use_kd: False
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth
 initial_checkpoint: pretrained/resnet18_image.pth
+resume: output/train/20250423-124710-ResNet18-224/last.pth.tar
 powerof2: True
 log_name: resnet18_imagenet
 wq_per_channel: True

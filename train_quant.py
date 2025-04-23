@@ -672,11 +672,6 @@ def main():
         if global_rank == 0:
             _logger.info("Verifying teacher model")
         validate(teacher, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast)
-    if args.initial_checkpoint != "":
-        if global_rank == 0:
-            _logger.info("Verifying initial model in test dataset")
-            _logger.info(model.device)
-        # validate(model, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast)
     if args.bw_list != "":
         bw_list = [int(x) for x in args.bw_list.split(',')]
         ba_list = [int(x) for x in args.ba_list.split(',')]
@@ -688,6 +683,11 @@ def main():
                 layer.quan_w_fn.set_bw(bw_list[idx])
                 layer.quan_a_fn.set_bw(ba_list[idx])
                 idx += 1
+    if args.initial_checkpoint != "":
+        if global_rank == 0:
+            _logger.info("Verifying initial model in test dataset")
+            _logger.info(model.device)
+        validate(model, data_loader_val, validate_loss_fn, args, amp_autocast=amp_autocast)
     if global_rank == 0:
         _logger.info(model)
     # setup checkpoint saver and eval metric tracking
@@ -739,10 +739,10 @@ def main():
             # lr_scheduler.step()
         if global_rank == 0:
             misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="last.pth.tar")
-        if eval_metrics[eval_metric] > max_acc:
-            max_acc = eval_metrics[eval_metric]
-            if global_rank == 0:
-                misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="best.pth.tar")
+            if eval_metrics[eval_metric] > max_acc:
+                max_acc = eval_metrics[eval_metric]
+                if global_rank == 0:
+                    misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="best.pth.tar")
             
     
 

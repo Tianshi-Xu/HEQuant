@@ -5,9 +5,6 @@ from .utils.tokenizer import Tokenizer
 from .utils.helpers import pe_check
 
 try:
-    import sys
-    sys.path.append("/data/home/menglifrl/pytorch-image-models")
-
     from timm.models.registry import register_model
 except ImportError:
     from .registry import register_model
@@ -62,6 +59,7 @@ class CVT(nn.Module):
 
     def forward(self, x):
         x = self.tokenizer(x)
+        print("cvt, x.shape:", x.shape)
         return self.classifier(x)
 
 
@@ -110,6 +108,10 @@ def cvt_7(*args, **kwargs):
 def cvt_8(*args, **kwargs):
     return _cvt(num_layers=8, num_heads=4, mlp_ratio=2, embedding_dim=256,
                 *args, **kwargs)
+
+def cvt_9(*args, **kwargs):
+    return _cvt(num_layers=9, num_heads=12, mlp_ratio=2, embedding_dim=192,
+                     *args, **kwargs)
 
 
 @register_model
@@ -188,6 +190,16 @@ def cvt_7_4_32(pretrained=False, progress=False,
                  num_classes=num_classes,
                  *args, **kwargs)
 
+@register_model
+def cvt_7_4_32_c100(pretrained=False, progress=False,
+               img_size=32, positional_embedding='learnable', num_classes=100,
+               *args, **kwargs):
+    return cvt_7('cvt_7_4_32_c100', pretrained, progress,
+                 kernel_size=4,
+                 img_size=img_size, positional_embedding=positional_embedding,
+                 num_classes=num_classes,
+                 *args, **kwargs)
+
 
 @register_model
 def cvt_7_4_32_sine(pretrained=False, progress=False,
@@ -198,3 +210,13 @@ def cvt_7_4_32_sine(pretrained=False, progress=False,
                  img_size=img_size, positional_embedding=positional_embedding,
                  num_classes=num_classes,
                  *args, **kwargs)
+
+@register_model
+def cvt_9_12_64(pretrained=False, progress=False,
+               img_size=64, positional_embedding='learnable', num_classes=200,
+               *args, **kwargs):
+    return cvt_9('cvt_9_12_64', pretrained, progress,
+                 kernel_size=4,
+                 img_size=img_size, positional_embedding=positional_embedding,
+                 num_classes=num_classes,
+                 *args, **kwargs)  # kernel_size is changed by patch_size

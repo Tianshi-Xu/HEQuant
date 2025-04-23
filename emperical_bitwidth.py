@@ -16,6 +16,7 @@ NVIDIA CUDA specific speedups adopted from NVIDIA Apex examples
 Hacked together by / Copyright 2020 Ross Wightman (https://github.com/rwightman)
 """
 import argparse
+import sys
 import time
 import yaml
 import os
@@ -23,30 +24,29 @@ import logging
 from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
-from logging.handlers import RotatingFileHandler
-from pulp import LpVariable,LpProblem,LpInteger,LpMinimize,GLPK_CMD,LpStatus,value
-import pulp
-from src.utils.hess.myhessian import hessian # Hessian computation
-import numpy as np
+import torch.multiprocessing as mp
 import torch
 import torch.nn as nn
 import torchvision.utils
-import math
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
+# sys.path.append("/data/home/menglifrl/pytorch-image-models")
+sys.path.append("/home/xts/code/MySparsity/pytorch-image-models")
 
-from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
-from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, \
-     model_parameters
-from timm.models.layers import convert_splitbn_model
+from timm.data import (
+    create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
+)
+from timm.models import (
+    create_model, safe_model_name, resume_checkpoint, load_checkpoint,
+    convert_splitbn_model, model_parameters
+)
 from timm.utils import *
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, JsdCrossEntropy
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler
 from timm.utils import ApexScaler, NativeScaler
 
-from src.quantization.modules.conv import QConv2d, QConvBn2d
 from src import *
-from src.quantization.utils import KLLossSoft
+
 try:
     from apex import amp
     from apex.parallel import DistributedDataParallel as ApexDDP
@@ -290,7 +290,6 @@ parser.add_argument('--torchscript', dest='torchscript', action='store_true',
                     help='convert model torchscript for inference')
 parser.add_argument('--log-wandb', action='store_true', default=False,
                     help='log training and validation metrics to wandb')
-# Quant
 parser.add_argument('--wq-enable', action='store_true', default=False,
                     help='enable weight quantization')
 parser.add_argument('--wq-mode', default='LSQ', type=str,
@@ -333,34 +332,59 @@ parser.add_argument('--resq-neg', default=None, type=int,
                     help='residual quantization negative threshold')
 parser.add_argument('--resq-asym', action='store_true', default=False,
                     help='asymmetric quantization for residual')
-parser.add_argument('--aq_per_channel', action='store_true', default=False,
-                    help='per-channel quantization for activation')
-parser.add_argument('--wq_asym', action='store_true', default=False,
-                    help='assymentric quantization for weight')
-parser.add_argument('--aq_asym', action='store_true', default=True,
-                    help='assymentric quantization for activation')
-parser.add_argument('--powerof2', action='store_true', default=True,
-                    help='whether scale is power of 2')
-# KD
+parser.add_argument('--replace-ln-by-bn', action='store_true', default=False,
+                    help='whether to use bn instead of layernorm')
 parser.add_argument('--use-kd', action='store_true', default=False,
                     help='whether to use kd')
+parser.add_argument('--use-token-kd', action='store_true', default=False,
+                    help='whether to use token level kd')
 parser.add_argument('--kd-alpha', default=1.0, type=float,
                     help='KD alpha, soft loss portion (default: 1.0)')
 parser.add_argument('--teacher', default='resnet101', type=str, metavar='MODEL',
                     help='Name of teacher model (default: "countception"')
 parser.add_argument('--teacher-checkpoint', default='', type=str, metavar='PATH',
                     help='Initialize teacher model from this checkpoint (default: none)')
-# Quant_ILP
-parser.add_argument('--log_name', default='none', type=str,
-                    help='act sparsification pattern')
-parser.add_argument('--budget', default=1,
-                    help='budget, latency ratio, 4 means w4a4, and the like')
-lasso_beta=0
-origin_latency = 0
-rotate_mats = {}
-rev_rotate_mats = {}
+parser.add_argument('--quant-teacher', action='store_true', default=False,
+                    help='whether to quantize the teacher')
+parser.add_argument('--use-distill-head', action='store_true', default=False,
+                    help='whether to use two separate heads for distillation')
+parser.add_argument('--use-layer-scale', action='store_true', default=False,
+                    help='whether to use scaler for attention and mlp')
+parser.add_argument('--use-skip', action='store_true', default=False,
+                    help='whether to use skip for connection')
+parser.add_argument('--use-relu', action='store_true', default=False,
+                    help='whether to use relu for the model')
+parser.add_argument('--replace-relu', action='store_true', default=False,
+                    help='whether to replace relu with prelu for the model')
+parser.add_argument('--no-bn', action='store_true', default=False,
+                    help='whether to use bn for the model')
+parser.add_argument('--kd-type', type=str, default="last",
+                    help='whether to match the last or all the embeddings')
+parser.add_argument('--post-res-bn', action='store_true', default=False,
+                    help='whether to have bn after res')
+parser.add_argument('--use-dual-skip', action='store_true', default=False,
+                    help='whether to use dual skip for resnet blocks')
+parser.add_argument('--down-block-type', default='default', type=str,
+                    help='Downsample block type: default, avgpool, conv3x3')
+parser.add_argument('--distributed', action='store_true', default=False,
+                    help='whether to use distributed training')
 
-def _parse_args():
+# sparsity
+parser.add_argument('--ws-enable', action='store_true', default=False,
+                    help='enable weight sparsification')
+parser.add_argument('--ws-mode', default='Identity', type=str,
+                    help='weight sparsification mode')
+parser.add_argument('--ws-patterns', default='1:1', type=str,
+                    help='weight sparsification pattern')
+parser.add_argument('--as-enable', action='store_true', default=False,
+                    help='enable act sparsification')
+parser.add_argument('--as-mode', default='Identity', type=str,
+                    help='act sparsification mode')
+parser.add_argument('--as-patterns', default='1:1', type=str,
+                    help='act sparsification pattern')
+
+
+def parse_args():
     # Do we have a config file to parse?
     args_config, remaining = config_parser.parse_known_args()
     if args_config.config:
@@ -371,14 +395,90 @@ def _parse_args():
     # The main arg parser parses the rest of the args, the usual
     # defaults will have been overridden if config file specified.
     args = parser.parse_args(remaining)
+    if args.qmodules is None:
+        args.qmodules = []
+    if args.resq_modules is None:
+        args.resq_modules = []
+    args.use_bn = not args.no_bn
 
     # Cache the args as a text string to save them in the output dir later
     args_text = yaml.safe_dump(args.__dict__, default_flow_style=False)
     return args, args_text
 
-def next_power_2(d):
-    p = math.ceil(math.log2(d))
-    return int(pow(2,p))
+
+def get_qat_model(model, args):
+
+    def _decode_args(m):
+        if ";" not in m:
+            return m, {}, {}
+        args = m.split(";")
+        name = args[0]
+        ret = {"wq": {}, "aq": {}}
+        for arg in args[1:]:
+            val = arg.split(":")
+            assert val[1] not in ret[val[0]]
+            ret[val[0]][val[1]] = eval(val[2])
+        return name, ret["wq"], ret["aq"]
+
+    qat_model = copy.deepcopy(model)
+    qat_model.train()
+    qconfigs = {}
+    for m in args.qmodules:
+        mod, wq, aq = _decode_args(m)
+        wqcfg = {
+            "enable": args.wq_enable,
+            "mode": args.wq_mode if args.wq_enable else "Identity",
+            "bit": args.wq_bitw,
+            "thd_pos": args.wq_pos,
+            "thd_neg": args.wq_neg,
+            "all_positive": False,
+            "symmetric": not args.wq_asym,
+            "per_channel": args.wq_per_channel,
+            "normalize_first": False,
+        }
+        wqcfg.update(wq)
+        aqcfg = {
+            "enable": args.aq_enable,
+            "mode": args.aq_mode if args.aq_enable else "Identity",
+            "bit": args.aq_bitw,
+            "thd_pos": args.aq_pos,
+            "thd_neg": args.aq_neg,
+            "all_positive": True if args.use_relu and "linear2" in m else False,
+            "symmetric": not args.aq_asym,
+            "per_channel": False,
+            "normalize_first": False,
+        }
+        aqcfg.update(aq)
+        wscfg = {
+            "enable": args.ws_enable,
+            "mode": args.ws_mode if args.ws_enable else "Identity",
+            "patterns": args.ws_patterns,
+        }
+        ascfg = {
+            "enable": args.as_enable,
+            "mode": args.as_mode if args.as_enable else "Identity",
+            "patterns": args.as_patterns,
+        }
+        qconfigs[mod] = {"weight_q": wqcfg, "act_q": aqcfg, "weight_s": wscfg, "act_s": ascfg}
+    qat_model = replace_module_by_qmodule(model, qconfigs)
+
+    qconfigs = {}
+    for m in args.resq_modules:
+        acfg = {
+            "enable": args.resq_enable,
+            "mode": args.resq_mode if args.resq_enable else "Identity",
+            "bit": args.resq_bitw,
+            "thd_pos": args.resq_pos,
+            "thd_neg": args.resq_neg,
+            "all_positive": args.use_relu,
+            "symmetric": not args.resq_asym,
+            "per_channel": False,
+            "normalize_first": False,
+        }
+        qconfigs[m] = {"act_q": acfg}
+    qat_model = register_act_quant_hook(model, qconfigs)
+    return qat_model
+
 
 def create_teacher_model(args):
     teacher = create_model(
@@ -395,107 +495,59 @@ def create_teacher_model(args):
         # checkpoint_path=args.teacher_checkpoint,
         # checkpoint_path="",
     )
+    if args.quant_teacher:
+        # args.wq_bitw = 4
+        # args.wq_enable = True
+        # args.aq_enable = False
+        args.wq_bitw = 2
+        # args.use_relu = False
+        # args.aq_sym = True
+        teacher = get_qat_model(teacher, args)
     if args.teacher_checkpoint != "":
-        load_checkpoint(teacher, args.teacher_checkpoint, strict=False)
+        load_checkpoint(teacher, args.teacher_checkpoint, strict=True)
     teacher = teacher.eval()
     return teacher
 
 
-def get_qat_model(model, args):
-    
-    def _decode_args(m):
-        if ";" not in m:
-            return m, {}, {}
-        args = m.split(";")
-        name = args[0]
-        ret = {"wq": {}, "aq": {}}
-        for arg in args[1:]:
-            # print(arg)
-            val = arg.split(":")
-            assert val[1] not in ret[val[0]]
-            ret[val[0]][val[1]] = eval(val[2])
-        return name, ret["wq"], ret["aq"]
-    
-    qat_model = copy.deepcopy(model)
-    qat_model.train()
+def update_lr_multi_gpu(args):
+    args.lr = args.world_size * args.lr
+    args.min_lr = args.world_size * args.min_lr
 
-    qconfigs = {}
-    if args.qmodules is not None:
-        for m in args.qmodules:
-            mod, wq, aq = _decode_args(m)
-            wcfg = {
-                "enable": args.wq_enable,
-                "mode": args.wq_mode if args.wq_enable else "Identity",
-                "bit": args.wq_bitw,
-                "thd_pos": args.wq_pos,
-                "thd_neg": args.wq_neg,
-                "all_positive": False,
-                "symmetric": True,  # not args.wq_asym,
-                "per_channel": args.wq_per_channel,
-                "normalize_first": False,
-                "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
-                "apot": False,
-            }
-            wcfg.update(wq)
-            acfg = {
-                "enable": args.aq_enable,
-                "mode": args.aq_mode if args.aq_enable else "Identity",
-                "bit": args.aq_bitw,
-                "thd_pos": args.aq_pos,
-                "thd_neg": args.aq_neg,
-                "all_positive": False if "convbn_first" in m else args.aq_asym,
-                "symmetric": True if "convbn_first" in m else not args.aq_asym,  # not args.aq_asym,
-                "per_channel": args.aq_per_channel,
-                "normalize_first": False,
-                "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
-            }
-            acfg.update(aq)
-            qconfigs[mod] = {"weight": wcfg, "act": acfg}
-        qat_model = replace_module_by_qmodule(model, qconfigs)
-    if args.resq_modules is not None:
-        # quantize residual 
-        qconfigs = {}
-        for m in args.resq_modules:
-            acfg = {
-                "enable": args.resq_enable,
-                "mode": args.resq_mode if args.resq_enable else "Identity",
-                "bit": args.resq_bitw,
-                "thd_pos": args.resq_pos,
-                "thd_neg": args.resq_neg,
-                # "all_positive": args.use_relu,
-                "all_positive": False if "downsample" in m else True,
-                "symmetric": True if "downsample" in m else False,  # not args.resq_asym,
-                "per_channel": False,
-                "normalize_first": False,
-                "p2_round_scale": True,  # scaling factor is power-of-2?
-            }
-            qconfigs[m] = {"act": acfg}
-        
-        qat_model = register_act_quant_hook(model, qconfigs)
 
-    return qat_model
-    
+def main(args):
+    setup_default_logging(log_path='')
 
-def main():
-    setup_default_logging()
-    args, args_text = _parse_args()
-    handler = RotatingFileHandler(args.log_name+'.log', maxBytes=10*1024*1024, backupCount=5)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    _logger.addHandler(handler)
+    args, args_text = args
+    _logger.info(args_text)
+
+    # import pdb; pdb.set_trace()
+
+    args.use_kd = args.use_kd or args.use_token_kd
+
     if args.log_wandb:
         if has_wandb:
             wandb.init(project=args.experiment, config=args)
         else:
             _logger.warning("You've requested to log metrics to wandb but package not found. "
                             "Metrics not being logged to wandb, try `pip install wandb`")
+
     args.prefetcher = not args.no_prefetcher
-    args.distributed = False
-    if 'WORLD_SIZE' in os.environ:
-        args.distributed = int(os.environ['WORLD_SIZE']) > 1
+    # args.distributed = False
+    # if 'WORLD_SIZE' in os.environ:
+    #     args.distributed = int(os.environ['WORLD_SIZE']) > 1
     args.device = 'cuda:0'
     args.world_size = 1
     args.rank = 0  # global rank
+    if args.distributed:
+        args.device = 'cuda:%d' % args.local_rank
+        torch.cuda.set_device(args.local_rank)
+        torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        args.world_size = torch.distributed.get_world_size()
+        args.rank = torch.distributed.get_rank()
+        update_lr_multi_gpu(args)
+        _logger.info('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d., lr %f' % (args.rank, args.world_size, args.lr))
+    else:
+        _logger.info('Training with a single process on 1 GPUs.')
     assert args.rank >= 0
 
     # resolve AMP arguments based on PyTorch / Apex availability
@@ -515,10 +567,7 @@ def main():
                         "Install NVIDA apex or upgrade to PyTorch 1.6")
 
     random_seed(args.seed, args.rank)
-    teacher = None
-    if args.use_kd:
-        teacher = create_teacher_model(args)
-        teacher.cuda()
+
     model = create_model(
         args.model,
         pretrained=args.pretrained,
@@ -531,15 +580,36 @@ def main():
         bn_tf=args.bn_tf,
         bn_momentum=args.bn_momentum,
         bn_eps=args.bn_eps,
-        scriptable=args.torchscript)
-    
-    # print("OK1")
-    if args.initial_checkpoint:
-        load_checkpoint(model, args.initial_checkpoint,strict=False)
-    
+        scriptable=args.torchscript,
+        # checkpoint_path=args.initial_checkpoint,
+        use_distill_head=args.use_distill_head,
+        use_layer_scale=args.use_layer_scale,
+        use_skip=args.use_skip,
+        use_relu=args.use_relu,
+        use_bn=args.use_bn,
+        use_dual_skip=args.use_dual_skip,
+        down_block_type=args.down_block_type,
+        post_res_bn=args.post_res_bn,
+        use_softmax=True)
+    if args.replace_relu:
+        model = replace_relu_by_prelu(model)
+    model = get_qat_model(model, args)
+    if args.initial_checkpoint != "":
+        # print("OK")
+        incompatible_keys = load_checkpoint(model, args.initial_checkpoint, strict=False)
+
     if args.num_classes is None:
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
+    if args.replace_ln_by_bn:
+        model = replace_ln_by_bn1d(model)
+    _logger.info(f"Model {model}")
+
+    # distillation
+    teacher = None
+    if args.use_kd:
+        teacher = create_teacher_model(args)
+        teacher.cuda()
 
     if args.local_rank == 0:
         _logger.info(
@@ -552,25 +622,37 @@ def main():
     if args.aug_splits > 0:
         assert args.aug_splits > 1, 'A split of 1 makes no sense'
         num_aug_splits = args.aug_splits
-    _logger.info('Get QAT model...')
-    model = get_qat_model(model, args)
-    _logger.info(model)
-    # exit(0)
+
     # enable split bn (separate bn stats per batch-portion)
     if args.split_bn:
         assert num_aug_splits > 1 or args.resplit
         model = convert_splitbn_model(model, max(num_aug_splits, 2))
-    
+
     # move model to GPU, enable channels last layout if set
     model.cuda()
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
+    # cal(model)
+    # exit(0)
+    # setup synchronized BatchNorm for distributed training
+    if args.distributed and args.sync_bn:
+        assert not args.split_bn
+        if has_apex and use_amp != 'native':
+            # Apex SyncBN preferred unless native amp is activated
+            model = convert_syncbn_model(model)
+        else:
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        if args.local_rank == 0:
+            _logger.info(
+                'Converted model to use Synchronized BatchNorm. WARNING: You may have issues if using '
+                'zero initialized BN layers (enabled by default for ResNets) while sync-bn enabled.')
 
     if args.torchscript:
         assert not use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
         assert not args.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
         model = torch.jit.script(model)
 
+    # when creating optimizer, only weights and emb have weight-decay
     optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
 
     # setup automatic mixed-precision (AMP) loss scaling and op casting
@@ -590,6 +672,18 @@ def main():
         if args.local_rank == 0:
             _logger.info('AMP not enabled. Training in float32.')
 
+    # optionally resume from a checkpoint
+    resume_epoch = None
+    if args.resume:
+        resume_epoch = resume_checkpoint(
+            model, args.resume,
+            optimizer=None if args.no_resume_opt else optimizer,
+            loss_scaler=None if args.no_resume_opt else loss_scaler,
+            log_info=args.local_rank == 0)
+        # optimizer.param_groups[1]['weight_decay'] = 0
+        # optimizer.param_groups[0]['weight_decay'] = 0
+        _logger.info(f"{optimizer}")
+
     # setup exponential moving average of model weights, SWA could be used here too
     model_ema = None
     if args.model_ema:
@@ -599,12 +693,27 @@ def main():
         if args.resume:
             load_checkpoint(model_ema.module, args.resume, use_ema=True)
 
+    # setup distributed training
+    if args.distributed:
+        if has_apex and use_amp != 'native':
+            # Apex DDP preferred unless native amp is activated
+            if args.local_rank == 0:
+                _logger.info("Using NVIDIA APEX DistributedDataParallel.")
+            model = ApexDDP(model, delay_allreduce=True)
+        else:
+            if args.local_rank == 0:
+                _logger.info("Using native Torch DistributedDataParallel.")
+            model = NativeDDP(model, device_ids=[args.local_rank])  # can use device str in Torch >= 1.1
+        # NOTE: EMA model does not need to be wrapped by DDP
+
     # setup learning rate schedule and starting epoch
     lr_scheduler, num_epochs = create_scheduler(args, optimizer)
     start_epoch = 0
     if args.start_epoch is not None:
         # a specified start_epoch will always override the resume epoch
         start_epoch = args.start_epoch
+    elif resume_epoch is not None:
+        start_epoch = resume_epoch
     if lr_scheduler is not None and start_epoch > 0:
         lr_scheduler.step(start_epoch)
 
@@ -615,7 +724,7 @@ def main():
     dataset_train = create_dataset(
         args.dataset,
         root=args.data_dir, split=args.train_split, is_training=True,
-        batch_size=args.batch_size, repeats=args.epoch_repeats,download=True)
+        batch_size=args.batch_size, repeats=args.epoch_repeats, download=True)
     dataset_eval = create_dataset(
         args.dataset, root=args.data_dir, split=args.val_split, is_training=False, batch_size=args.batch_size)
 
@@ -639,37 +748,6 @@ def main():
         dataset_train = AugMixDataset(dataset_train, num_splits=num_aug_splits)
 
     # create data loaders w/ augmentation pipeiine
-    train_interpolation = args.train_interpolation
-    if args.no_aug or not train_interpolation:
-        train_interpolation = data_config['interpolation']
-    loader_train = create_loader(
-        dataset_train,
-        input_size=data_config['input_size'],
-        batch_size=args.batch_size,
-        is_training=True,
-        use_prefetcher=args.prefetcher,
-        no_aug=args.no_aug,
-        re_prob=args.reprob,
-        re_mode=args.remode,
-        re_count=args.recount,
-        re_split=args.resplit,
-        scale=args.scale,
-        ratio=args.ratio,
-        hflip=args.hflip,
-        vflip=args.vflip,
-        color_jitter=args.color_jitter,
-        auto_augment=args.aa,
-        num_aug_splits=num_aug_splits,
-        interpolation=train_interpolation,
-        mean=data_config['mean'],
-        std=data_config['std'],
-        num_workers=args.workers,
-        distributed=args.distributed,
-        collate_fn=collate_fn,
-        pin_memory=args.pin_mem,
-        use_multi_epochs_loader=args.use_multi_epochs_loader
-    )
-
     loader_eval = create_loader(
         dataset_eval,
         input_size=data_config['input_size'],
@@ -684,414 +762,149 @@ def main():
         crop_pct=data_config['crop_pct'],
         pin_memory=args.pin_mem,
     )
+    _logger.info(f"Validate transform: {loader_eval.dataset.transform}")
 
-    # setup loss function
-    if args.jsd:
-        assert num_aug_splits > 1  # JSD only valid with aug splits set
-        train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing).cuda()
-    elif mixup_active:
-        # smoothing is handled with mixup target transform
-        train_loss_fn = SoftTargetCrossEntropy().cuda()
-    elif args.smoothing:
-        train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing).cuda()
-    else:
-        train_loss_fn = nn.CrossEntropyLoss().cuda()
-    train_loss_fn_kd = None
-    if args.use_kd:    
-        train_loss_fn_kd = KLLossSoft().cuda()
+    # if args.use_kd:
+    #     train_loss_fn = KLLossSoft(train_loss_fn, alpha=args.kd_alpha)
+
     validate_loss_fn = nn.CrossEntropyLoss().cuda()
-    # validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
-    # _logger.info("model:"+str(model))
+
     if args.use_kd:
         _logger.info("Verifying teacher model")
         validate(teacher, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+
     if args.initial_checkpoint != "":
-        _logger.info("Verifying initial model in training dataset")
-        # validate(model, loader_train, validate_loss_fn, args, amp_autocast=amp_autocast)
-        train_metrics = train_one_epoch(
-                0, model, loader_train, optimizer, train_loss_fn, args,
-                lr_scheduler=lr_scheduler,
-                amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema, mixup_fn=mixup_fn,teacher=teacher,loss_fn_kd=train_loss_fn_kd)
+        _logger.info("Verifying initial model")
+        validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+
     # setup checkpoint saver and eval metric tracking
-    if args.rank == 0:
-        if args.experiment:
-            exp_name = args.experiment
-        else:
-            exp_name = '-'.join([
-                datetime.now().strftime("%Y%m%d-%H%M%S"),
-                safe_model_name(args.model),
-                str(data_config['input_size'][-1])
-            ])
-    
-    ILP(args,loader_train,model,validate_loss_fn)
-
-def next_power_2(d):
-    p = math.ceil(math.log2(d))
-    return int(pow(2,p))
-
-# cal_rot and cal_latency are used to compute latency of each layer, each block size
-def cal_rot(n,m,d1,d2):
-    # _logger.info("n,m,d1,d2,b: %d %d %d %d %d",n,m,d1,d2,b)
-    min_rot = 1e8
-    d_min = int(min(d2,d1))
-    final_mp = 0
-    final_d = 0
-    for ri in range(1,(d_min)+1):
-        for ro in range(1,(d_min)+1):
-            d=int(ri*ro)
-            m_p=int(n/d)
-            if m*d_min<n:
-                if d!=d_min:
-                    continue
-                i = 1
-                while i<=m:
-                    next_pow_2 = next_power_2(i)
-                    if next_pow_2*d>n:
-                        break
-                    i+=1
-                m_p=i-1
-            if d>d_min or m_p>m or m_p<=0:
-                continue
-            tmp=m*d1*(ri-1)/(m_p*d)+m*d2*(ro-1)/(m_p*d)
-            if tmp<min_rot:
-                min_rot=tmp
-                final_d=d
-                final_mp = m_p
-    # _logger.info("final_mp,final_d: %d %d",final_mp,final_d)
-    mul = math.ceil(1.0*m/final_mp)*math.ceil(1.0*d1/final_d)*math.ceil(1.0*d2/final_d)*final_d
-    return min_rot, mul, final_mp, final_d
-
-# compute latency given layer dimension
-# (HW,C,K)=(d1,d2,d3), this fuction can be applied to both convolution and GEMM
-def cal_latency(layer,HW,C,K,t):
-    # _logger.info("HW,C,K,b: %d %d %d %d",HW,C,K,b)
-    bandwidth = 384*8*(10**6)  # 384MBps
-    n=8192
-    num_m=1
-    q = 2*t+9
-    RNS_scale=1.5
-    # when padding is not 0, we need to pad the input to power of 2 since we need NTT in neujean's encode
-    if hasattr(layer,"padding") and layer.padding !=0:
-        power2 = next_power_2(HW)
-        if power2>n:
-            num_m=int(math.ceil(power2/n))
-            mp = n
-        else:
-            mp = power2
-        n=int(math.floor(n/mp))
-        HW=1
-        # _logger.info("hw,n,C,K,b: %d %d %d %d %d",HW,n,C,K,b)
-    rot, mul, final_mp, final_d = cal_rot(n,HW,C,K)
-    num_cts = num_m*math.ceil(HW/final_mp)*(math.ceil(C/final_d)+math.ceil(K/final_d))
-    comm = num_cts * n * q * 2
-    la_comm = comm/bandwidth
-    rot = rot*num_m
-    mul = mul*num_m
-    la_compute = rot+0.135*mul
-    # if plaintext bitwidth > 26-bit, there should be 2 RNS
-    if t > 15:
-        la_compute *= 1e9
-    print("la_compute,la_comm:",la_compute,la_comm)
-    return torch.tensor(la_compute + la_comm).item()
-
-# find the minimum latency given layer dimension and accumulation bitwidth and t_min
-def find_min_latency(layer,HW,C,K,bw,ba,t_min,total_bw=None):
-    if total_bw is None:
-        # print(layer)
-        # print("HW,C,K,bw,ba,t_min:",HW,C,K,bw,ba,t_min)
-        scale_factor, _, _ = layer._bn_scaling_factor()
-        layer.quan_w_fn.set_bw(bw)
-        scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
-        total_bw = int(ba + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
-        # print("total_bw:",total_bw)
-        # print("bw+ba+e:",bw+ba+layer.e) 
-    b = math.ceil(t_min/total_bw)
-    b = 1
-    if b==1:
-        return cal_latency(layer,HW,C,K,total_bw)
-    latency1 = cal_latency(layer,math.ceil(HW/b),C,K,b*total_bw)
-    latency2 = cal_latency(layer,HW,math.ceil(C/b),K,b*total_bw)
-    latency3 = cal_latency(layer,HW,C,math.ceil(K/b),b*total_bw)
-    print("latency1,latency2,latency3:",latency1,latency2,latency3)
-    return min(latency1,latency2,latency3)
-
-# compute |Y'-Y|*H*|Y'-Y|^T
-def cal_sensitivity(layer,bw,ba):
-    layer.quan_w_fn.set_bw(32)
-    layer.quan_a_fn.set_bw(32)
-    output1 = layer(layer.input)
-    layer.quan_w_fn.set_bw(bw)
-    layer.quan_a_fn.set_bw(ba)
-    output2 = layer(layer.input)
-    # 问题1，delta x的x取什么?
-    # sensitivity = torch.sum(((output1-output2)**2))/1024
-    sensitivity = torch.sum(((output1-output2)**2) * ((layer.output_grad) **2))/1024
-    # print("sensitivity:",sensitivity)
-    return sensitivity.item()
-
-
-def ILP(args,loader_train,model,loss_fn):
-    target_block_size = args.budget
-    for input, target in loader_train:
-        break
-    input, target = input.cuda(), target.cuda()
-    device = input.device
-    idx = 0
-    origin_latency = 0
-    cir_idx = []
-    wb_list = [2,3,4]
-    ab_list = [2,3,4,5,6]
-    sensitivity = {}
-    _logger.info("target_block_size:"+str(target_block_size))
-    t_min = 18
-    latency_accumulation = {}
-    for wb in wb_list:
-        for ab in ab_list:
-            sensitivity["w"+str(wb)+"a"+str(ab)] = []
-    for i in range(6,27):
-        latency_accumulation["b"+str(i)] = []
-    b_acc = {}
-    for name,layer in model.named_modules():
-        if "first" in name:
-            continue
-        if isinstance(layer, QConvBn2d):
-            cir_idx.append(idx)
-            # origin_latency += find_min_latency(layer,layer.d1,layer.in_channels,layer.out_channels,args.budget,args.budget,t_min) 
-            origin_latency += cal_latency(layer,layer.d1,layer.in_channels,layer.out_channels,15)
-            # get b_acc
-            # for wb in wb_list:
-            #     for ab in ab_list:
-            #         scale_factor, _, _ = layer._bn_scaling_factor()
-            #         layer.quan_w_fn.set_bw(wb)
-            #         scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
-            #         total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
-            #         if total_bw == 15:
-            #             b_acc["idx"+str(idx)+"wb"+str(wb)+"ab"+str(ab)] = total_bw
-            for wb in wb_list:
-                for ab in ab_list:
-                    sensitivity["w"+str(wb)+"a"+str(ab)].append(cal_sensitivity(layer,wb,ab))
-                    _logger.info("sensitivity_w"+str(wb)+"a"+str(ab)+":"+str(sensitivity["w"+str(wb)+"a"+str(ab)][-1]))
-            # _logger.info("d1:"+str(layer.d1))
-            for i in range(6,27):
-                latency_accumulation["b"+str(i)].append(find_min_latency(layer, layer.d1,layer.in_channels,layer.out_channels,1,1,t_min,i))
-                _logger.info("latency_accumulation_b"+str(i)+":"+str(latency_accumulation["b"+str(i)][-1]))
-
-            # latency_weights_b32.append(cal_latency(layer.d1,layer.in_channels,layer.out_channels,32,space))
-            idx+=1
-    # _logger.info("b_acc:"+str(b_acc))
-    # exit(0)
-    _logger.info("origin_latency:"+str(origin_latency))
-    # params = hessian_comp.params
-    
-    _logger.info("cir_idx:"+str(cir_idx))
-    
-    # print(traces)
-    num_variable = len(cir_idx)
-    variable = {}
-    for i in range(num_variable):
-        for wb in wb_list:
-            for ab in ab_list:
-                variable[f"wb{wb}ab{ab}_{i}"] = LpVariable(f"wb{wb}ab{ab}_{i}", 0, 1, cat=LpInteger)
-    
-    prob = LpProblem("Bitwidth", LpMinimize)
-    idx = 0
-    tmp = None
-    acc_list = {}
-    for name,layer in model.named_modules():
-        if "first" in name:
-            continue
-        if isinstance(layer, QConvBn2d):
-            for wb in wb_list:
-                for ab in ab_list:
-                    scale_factor, _, _ = layer._bn_scaling_factor()
-                    layer.quan_w_fn.set_bw(wb)
-                    scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
-                    # print(layer.in_channels)
-                    # print(scaled_weight_int.shape)
-                    # print(torch.mean(scaled_weight_int))
-                    # print(torch.sum(torch.abs(scaled_weight_int)))
-                    # print("wb,ab,e:",wb,ab,layer.e)
-                    total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
-                    print("total_bw:",total_bw)
-                    if tmp is None:
-                        tmp = variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
-                    else:
-                        tmp += variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
-                    acc_list[f"wb{wb}ab{ab}_{idx}"] = total_bw
-            idx+=1
-        
-    prob += (tmp-origin_latency <= 0.01)
-    
-    #one layer only have one blocksize
-    for i in range(num_variable):
-        tmp = None
-        for wb in wb_list:
-            for ab in ab_list:
-                if tmp is None:
-                    tmp = variable[f"wb{wb}ab{ab}_{i}"]
-                else:
-                    tmp += variable[f"wb{wb}ab{ab}_{i}"]
-        prob += (tmp == 1)
-
-    # delta_weights_b32 = np.array(delta_weights_b32)
-    # sensitivity_b32 = traces * delta_weights_b32
-    # optimization target: minimize the sensitivity
-    idx = 0
-    tmp2 = None
-    for name,layer in model.named_modules():
-        if "first" in name:
-            continue
-        if isinstance(layer, QConvBn2d):
-            for wb in wb_list:
-                for ab in ab_list:
-                    if tmp2 is None:
-                        tmp2 = variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
-                    else:
-                        tmp2 += variable[f"wb{wb}ab{ab}_{idx}"]*sensitivity[f"w{wb}a{ab}"][idx]
-            idx += 1
-    prob += tmp2
-    # prob += sum(variable[f"b2_{i}"]*sensitivity_b2[i] + variable[f"b4_{i}"]*sensitivity_b4[i] +variable[f"b8_{i}"]*sensitivity_b8[i] +variable[f"b16_{i}"]*sensitivity_b16[i] for i in range(num_variable))
-
-    status = prob.solve(GLPK_CMD(msg=1, mip=1, options=["--tmlim", "10000","--simplex"]))
-    
-    LpStatus[status]
-
-    bw_result = []
-    ba_result = []
-    acc_result = []
-    current_latency = 0
-    for i in range(num_variable):
-        for wb in wb_list:
-            for ab in ab_list:
-                if value(variable[f"wb{wb}ab{ab}_{i}"]) == 1:
-                    bw_result.append(wb)
-                    ba_result.append(ab)
-                    acc_result.append(acc_list[f"wb{wb}ab{ab}_{i}"])
-                    break
-        # elif block_size == 32:
-        #     current_latency += latency_weights_b32[i]
-    _logger.info(str(len(bw_result)))
-    idx = 0
-    _logger.info("target: w"+str(args.budget)+"a"+str(args.budget))
-    _logger.info("bw_result:"+str(bw_result))
-    _logger.info("ba_result:"+str(ba_result))
-    _logger.info("acc_result:"+str(acc_result))
-    
-
-def backward_hook(module, grad_input, grad_output):
-    if module.output_grad is None:
-        module.output_grad = grad_output[0]
-    else:
-        module.output_grad += grad_output[0]
-
-def train_one_epoch(
-        epoch, model, loader, optimizer, loss_fn, args,
-        lr_scheduler=None, saver=None, output_dir=None, amp_autocast=suppress,
-        loss_scaler=None, model_ema=None, mixup_fn=None,teacher=None,loss_fn_kd=None):
-    
-    if args.mixup_off_epoch and epoch >= args.mixup_off_epoch:
-        if args.prefetcher and loader.mixup_enabled:
-            loader.mixup_enabled = False
-        elif mixup_fn is not None:
-            mixup_fn.mixup_enabled = False
+    best_metric = None
+    best_epoch = None
             
-    for name, layer in model.named_modules():
-        if "first" in name:
-            continue
-        if isinstance(layer, QConvBn2d):
-            layer.register_backward_hook(backward_hook)
+    if best_metric is not None:
+        _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
 
-    second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-    batch_time_m = AverageMeter()
-    data_time_m = AverageMeter()
-    losses_m = AverageMeter()
+def worker(idx, batch_size, x_q, w_q, padded_x_q, results):
+    part_sum = torch.zeros_like(padded_x_q[0, :, :, :])
+    max_max_num, max_min_num, max_mean_num = 0, 0, 0
+    max_bit, min_bit, mean_bit = 0, 0, 0
+    # print("w_q_unique:",w_q.unique())
+    # padded_x_q_cpu = padded_x_q.cpu()
+    # w_q_cpu = w_q.cpu()
+    # print(x_q.unique())
+    for n in range(idx * batch_size, min((idx + 1) * batch_size, x_q.shape[0])): 
+        # print("n:",n)
+        for k in range(w_q.shape[0]):
+            for w in range(x_q.shape[2]):
+                for h in range(x_q.shape[3]):
+                    if w_q.shape[1] == 1:
+                        part_sum = torch.mul(padded_x_q[n, k, w:w+w_q.shape[2], h:h+w_q.shape[3]], w_q[k, 0, :, :])
+                    else:
+                        # print("kernel size:",w_q.shape[2],w_q.shape[3])
+                        # sys.stdout.flush()
+                        part_sum = torch.mul(padded_x_q[n, :, w:w+w_q.shape[2], h:h+w_q.shape[3]], w_q[k, :, :, :])
+                    # print("part_sum: ",part_sum)
+                    tmp_max_mean_num = torch.abs(part_sum.flatten().cumsum(0)).max()
+                    tmp_mean_bit = torch.log2(tmp_max_mean_num).ceil()
+                    mean_bit = max(mean_bit, tmp_mean_bit)
+                    max_mean_num = max(max_mean_num, tmp_max_mean_num)
+                    # print("mean_bit: ",mean_bit)
+                    negative_part_sum = part_sum[part_sum < 0]
+                    positive_part_sum = part_sum[part_sum > 0]
 
-    model.train()
+                    tmp_max_max_num = torch.sum(torch.abs(negative_part_sum))
+                    tmp_max_max_num = max(tmp_max_max_num, torch.sum(positive_part_sum))
+                    tmp_max_bit = torch.log2(tmp_max_max_num).ceil()
+                    max_bit = max(max_bit, tmp_max_bit)
+                    max_max_num = max(max_max_num, tmp_max_max_num)
 
-    end = time.time()
-    last_idx = len(loader) - 1
-    num_updates = epoch * len(loader)
-    optimizer.zero_grad()
-    total_samples = len(loader.dataset)
+                    tmp_max_min_num = torch.max(torch.abs(part_sum))
+                    tmp_max_min_num = max(tmp_max_min_num, part_sum.sum())
+                    tmp_min_bit = torch.log2(tmp_max_min_num).ceil()
+                    min_bit = max(min_bit, tmp_min_bit)
+                    max_min_num = max(max_min_num, tmp_max_min_num)
+                    
+    print("done:", idx)
     
-    for batch_idx, (input, target) in enumerate(loader):
-        print("batch_idx:"+str(batch_idx))
-        last_batch = batch_idx == last_idx
-        data_time_m.update(time.time() - end)
-        if not args.prefetcher:
-            input, target = input.cuda(), target.cuda()
-            if mixup_fn is not None:
-                input, target = mixup_fn(input, target)
-        if args.channels_last:
-            input = input.contiguous(memory_format=torch.channels_last)
+    results = max(results, [max_max_num, max_min_num, max_mean_num, max_bit, min_bit, mean_bit])
+    print(results)
+    sys.stdout.flush()
 
-        with amp_autocast():
-            output = model(input)
-            if args.use_kd:
-                target_t = teacher(input)
-                loss = loss_fn_kd(output, target_t)
-            else:
-                loss = loss_fn(output, target)
-        # _logger.info("loss:"+str(loss.item()))
-        if not args.distributed:
-            losses_m.update(loss.item(), input.size(0))
-
-        if loss_scaler is not None:
-            loss_scaler(
-                loss, optimizer,
-                clip_grad=args.clip_grad, clip_mode=args.clip_mode,
-                parameters=model_parameters(model, exclude_head='agc' in args.clip_mode),
-                create_graph=second_order)
-        else:
-            loss.backward(create_graph=second_order)
-            if args.clip_grad is not None:
-                dispatch_clip_grad(
-                    model_parameters(model, exclude_head='agc' in args.clip_mode),
-                    value=args.clip_grad, mode=args.clip_mode)
-
-        if model_ema is not None:
-            model_ema.update(model)
-
-        torch.cuda.synchronize()
-        num_updates += 1
-        batch_time_m.update(time.time() - end)
-        if last_batch or batch_idx % args.log_interval == 0:
-            lrl = [param_group['lr'] for param_group in optimizer.param_groups]
-            lr = sum(lrl) / len(lrl)
-
-            if args.distributed:
-                reduced_loss = reduce_tensor(loss.data, args.world_size)
-                losses_m.update(reduced_loss.item(), input.size(0))
-
-        if saver is not None and args.recovery_interval and (
-                last_batch or (batch_idx + 1) % args.recovery_interval == 0):
-            saver.save_recovery(epoch, batch_idx=batch_idx)
-
-        if lr_scheduler is not None:
-            lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
-
-        end = time.time()
-        if args.num_classes == 1000 and batch_idx % 50==0:
-            _logger.info("batch_idx:"+str(batch_idx))
-        # if batch_idx>300 and args.num_classes == 200 and "mobile" in args.teacher:
-        #     total_samples = 300
-        #     break
-        if batch_idx>500 and args.num_classes == 1000:
-            total_samples = 500
-            break
-        # break
+def check_range(model, inp, out):
+    if model.stride[0]==2:
+        return
+    # if model.groups != 1:
+    #     return
+    try:
+        mp.set_start_method('spawn', force=True)
+        print("spawned")
+    except RuntimeError:
+        pass
+    print("In layer: ",model)
+    sys.stdout.flush()
+    new_inp = inp[0].clone().detach()
+    x_q = model.quan_a_fn(new_inp)
+    x_q_alpha = model.quan_a_fn.alpha
+    w_q = model.quan_w_fn(model.weight)
+    w_q_alpha = model.quan_w_fn.alpha
+    x_q = x_q / x_q_alpha
+    w_q = w_q / w_q_alpha
     
-    if hasattr(optimizer, 'sync_lookahead'):
-        optimizer.sync_lookahead()
-    _logger.info("len loader.dataset:"+str(total_samples))
-    return OrderedDict([('loss', losses_m.avg)])
+    padded_x_q = F.pad(x_q, (1, 1, 1, 1))
+    num_processes = mp.cpu_count()*3//4  # 获取可用的CPU核心数
+    batch_size = (x_q.shape[0] + num_processes - 1) // num_processes  # 每个进程处理的样本数
+    print("batch:",batch_size)
+    # 创建进程池和共享内存数组
+    pool = mp.Pool(processes=num_processes)
+    results = [0, 0, 0, 0, 0, 0]
+    
+    # 调用worker函数进行并行计算
+    jobs = []
+    for i in range(num_processes):
+        job = pool.apply_async(worker, (i, batch_size, x_q, w_q, padded_x_q, results))
+        jobs.append(job)
+    
+    # 等待所有任务完成
+    for job in jobs:
+        job.get()
+    
+    # 汇总计算结果
+    print("max num: ",results[0])
+    print("min num: ",results[1])
+    print("mean num: ",results[2])
+    print("max_bit: ",results[3])
+    print("min_bit: ",results[4])
+    print("mean_bit: ",results[5])
+
+
+def check_w_l1norm(model, inp, out):
+    # if model.stride[0]==2:
+    #     return
+    print("In layer: ",model)
+    sys.stdout.flush()
+    new_inp = inp[0].clone().detach()
+    x_q = torch.ones_like(new_inp)
+    w_q = model.quan_w_fn(model.weight)
+    w_q_alpha = model.quan_w_fn.alpha
+    w_q = w_q / w_q_alpha
+    # print(w_q)
+    y_q = F.conv2d(x_q, torch.abs(w_q), stride=model.stride, padding=model.padding, dilation=model.dilation, groups=model.groups)
+    print("max l1 norm: ",torch.max(torch.abs(y_q)))
+    print("max l1 norm bit:",torch.log2(torch.max(torch.abs(y_q))).ceil())
+    sys.stdout.flush()
+    
+def hook(model,fn):
+    for name, module in model.named_modules():
+        if isinstance(module, QConv2d):
+            module.register_forward_hook(fn)
 
 def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix=''):
+    # hook(model, check_w_l1norm)
     batch_time_m = AverageMeter()
     losses_m = AverageMeter()
     top1_m = AverageMeter()
     top5_m = AverageMeter()
-
+    hook(model,check_range)
     model.eval()
 
     end = time.time()
@@ -1138,16 +951,19 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
                 log_name = 'Test' + log_suffix
                 _logger.info(
                     '{0}: [{1:>4d}/{2}]  '
-                    'Time: {batch_time.val:.3f} ({batch_time.avg:.3f})  '
+                    'Time: {batch_time.val:.3f} ({batch_time.sum:.3f}s) '
                     'Loss: {loss.val:>7.4f} ({loss.avg:>6.4f})  '
                     'Acc@1: {top1.val:>7.4f} ({top1.avg:>7.4f})  '
                     'Acc@5: {top5.val:>7.4f} ({top5.avg:>7.4f})'.format(
                         log_name, batch_idx, last_idx, batch_time=batch_time_m,
                         loss=losses_m, top1=top1_m, top5=top5_m))
-
+            print("total ok")
+            exit(0)
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
 
     return metrics
 
+
 if __name__ == '__main__':
-    main()
+    args, args_text = parse_args()
+    main((args, args_text))

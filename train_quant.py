@@ -122,6 +122,8 @@ parser.add_argument('-b', '--batch-size', type=int, default=32, metavar='N',
                     help='input batch size for training (default: 32)')
 parser.add_argument('-vb', '--validation-batch-size-multiplier', type=int, default=1, metavar='N',
                     help='ratio of validation batch size to training batch size (default: 1)')
+parser.add_argument('--gpu', default=None, type=int,
+                    help='GPU id to use.')
 
 # Optimizer parameters
 parser.add_argument('--opt', default='sgd', type=str, metavar='OPTIMIZER',
@@ -539,7 +541,7 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
     handler.setFormatter(formatter)
     _logger.addHandler(handler)
     args.gpu = gpu
-    main_gpu = 0
+    main_gpu = args.gpu
     _logger.info("begin")
     if args.gpu is not None:
         _logger.info(f'Use GPU: {args.gpu} for training')
@@ -834,6 +836,7 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
     best_epoch = None
     saver = None
     output_dir = None
+    print("args.gpu: ", args.gpu)
     if args.gpu == main_gpu:
         if args.experiment:
             exp_name = args.experiment
@@ -854,6 +857,7 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
             f.write(str(model))
         _logger.info(model)
     try:
+        print("saver: ", saver)
         for epoch in range(start_epoch, num_epochs):
             if args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
                 loader_train.sampler.set_epoch(epoch)
@@ -887,7 +891,7 @@ def main_worker(gpu, ngpus_per_node, args, args_text):
                 update_summary(
                     epoch, train_metrics, eval_metrics, os.path.join(output_dir, 'summary.csv'),
                     write_header=best_metric is None, log_wandb=args.log_wandb and has_wandb)
-
+            
             if saver is not None:
                 # save proper checkpoint with eval metric
                 save_metric = eval_metrics[eval_metric]

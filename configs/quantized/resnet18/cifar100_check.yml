@@ -40,13 +40,13 @@ smoothing: 0.1
 workers: 4
 seed: 1101
 checkpoint_hist: 3
-log_name: resnet18_c100_w4a4_fix
+log_name: resnet18_c100_w4a4_check
 
 use_kd: true
 kd_alpha: 4
 teacher: ResNet18
-teacher_checkpoint: pretrained/resnet_c100.pth.tar
-initial_checkpoint: pretrained/resnet_c100.pth.tar
+teacher_checkpoint: pretrained/resnet_c100_w4a4.pth.tar
+initial_checkpoint: pretrained/resnet_c100_w4a4.pth.tar
 
 gpu: 0
 

@@ -2,7 +2,7 @@ dataset: imagenet
 num_classes: 1000
 train_split: train
 val_split: validation
-batch_size: 512
+batch_size: 128
 img_size: 256
 mean:
     - 0.485
@@ -41,25 +41,32 @@ log_name: image_test6
 checkpoint_hist: 1
 sync_bn: True
 pin_mem: True
-no_prefetcher: False
+no_prefetcher: True
 
-use_kd: True
+use_kd: False
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth
 initial_checkpoint: pretrained/resnet18_image.pth
 powerof2: True
 
+log_name: resnet18_imagenet_ILP
+budget: 4
+
 wq_per_channel: True
 wq_enable: True
 wq_mode: "LSQ"
-wq_bitw: 4
+wq_bitw: 32
+#wq_pos: 1
+#wq_neg: -1
 aq_enable: True
 aq_asym: True
 aq_mode: "LSQ"
-aq_bitw: 4
+aq_bitw: 32
+#aq_pos: 1
+#aq_neg: -1
 resq_enable: True
 resq_mode: "LSQ"
-resq_bitw: 16
+resq_bitw: 32
 qmodules: 
 #   - "convbn_first;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"

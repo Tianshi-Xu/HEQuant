@@ -5,9 +5,6 @@ from .utils.tokenizer import Tokenizer
 from .utils.helpers import pe_check
 
 try:
-    import sys
-    sys.path.append("/home/mengli/third-party/pytorch-image-models")
-
     from timm.models.registry import register_model
 except ImportError:
     from .registry import register_model
@@ -30,11 +27,6 @@ class ViTLite(nn.Module):
                  mlp_ratio=4.0,
                  num_classes=1000,
                  positional_embedding='learnable',
-                 use_distill_head=False,
-                 use_layer_scale=False,
-                 use_skip=False,
-                 use_relu=False,
-                 use_softmax=True,
                  *args, **kwargs):
         super(ViTLite, self).__init__()
         assert img_size % kernel_size == 0, f"Image size ({img_size}) has to be" \
@@ -62,29 +54,25 @@ class ViTLite(nn.Module):
             num_heads=num_heads,
             mlp_ratio=mlp_ratio,
             num_classes=num_classes,
-            positional_embedding=positional_embedding,
-            # use_distill_head=use_distill_head,
-            use_layer_scale=use_layer_scale,
-            # use_kd=use_kd,
-            use_skip=use_skip,
-            use_relu=use_relu,
-            use_softmax=use_softmax,
+            positional_embedding=positional_embedding
         )
 
     def forward(self, x):
         x = self.tokenizer(x)
+        print("vit, x.shape:", x.shape)
         return self.classifier(x)
 
 
 def _vit_lite(arch, pretrained, progress,
               num_layers, num_heads, mlp_ratio, embedding_dim,
+              positional_embedding='learnable',
               kernel_size=4, *args, **kwargs):
     model = ViTLite(num_layers=num_layers,
                     num_heads=num_heads,
                     mlp_ratio=mlp_ratio,
                     embedding_dim=embedding_dim,
                     kernel_size=kernel_size,
-                    # positional_embedding='learnable',
+                    positional_embedding=positional_embedding,
                     *args, **kwargs)
 
     if pretrained and arch in model_urls:
@@ -116,6 +104,18 @@ def vit_6(*args, **kwargs):
 
 def vit_7(*args, **kwargs):
     return _vit_lite(num_layers=7, num_heads=4, mlp_ratio=2, embedding_dim=256,
+                     *args, **kwargs)
+
+def vit_9(*args, **kwargs):
+    return _vit_lite(num_layers=9, num_heads=12, mlp_ratio=2, embedding_dim=192,
+                     *args, **kwargs)
+    
+def vit_9_384(*args, **kwargs):
+    return _vit_lite(num_layers=9, num_heads=12, mlp_ratio=2, embedding_dim=384,
+                     *args, **kwargs)
+    
+def vit_9_288(*args, **kwargs):
+    return _vit_lite(num_layers=9, num_heads=12, mlp_ratio=2, embedding_dim=288,
                      *args, **kwargs)
 
 
@@ -194,6 +194,16 @@ def vit_7_4_32(pretrained=False, progress=False,
                  img_size=img_size, positional_embedding=positional_embedding,
                  num_classes=num_classes,
                  *args, **kwargs)
+    
+@register_model
+def vit_7_4_32_c100(pretrained=False, progress=False,
+               img_size=32, positional_embedding='learnable', num_classes=100,
+               *args, **kwargs):
+    return vit_7('vit_7_4_32', pretrained, progress,
+                 kernel_size=4,
+                 img_size=img_size, positional_embedding=positional_embedding,
+                 num_classes=num_classes,
+                 *args, **kwargs)
 
 
 @register_model
@@ -205,3 +215,34 @@ def vit_7_4_32_sine(pretrained=False, progress=False,
                  img_size=img_size, positional_embedding=positional_embedding,
                  num_classes=num_classes,
                  *args, **kwargs)
+
+
+@register_model
+def vit_9_12_64(pretrained=False, progress=False,
+               img_size=64, positional_embedding='learnable', num_classes=200,
+               *args, **kwargs):
+    return vit_9('vit_9_12_64', pretrained, progress,
+                 kernel_size=4,
+                 img_size=img_size, positional_embedding=positional_embedding,
+                 num_classes=num_classes,
+                 *args, **kwargs)  # kernel_size is changed by patch_size
+    
+@register_model
+def vit_9_12_64_384(pretrained=False, progress=False,
+               img_size=64, positional_embedding='learnable', num_classes=200,
+               *args, **kwargs):
+    return vit_9_384('vit_9_12_64_384', pretrained, progress,
+                 kernel_size=4,
+                 img_size=img_size, positional_embedding=positional_embedding,
+                 num_classes=num_classes,
+                 *args, **kwargs)  # kernel_size is changed by patch_size
+    
+@register_model
+def vit_9_12_64_288(pretrained=False, progress=False,
+               img_size=64, positional_embedding='learnable', num_classes=200,
+               *args, **kwargs):
+    return vit_9_288('vit_9_12_64_288', pretrained, progress,
+                 kernel_size=4,
+                 img_size=img_size, positional_embedding=positional_embedding,
+                 num_classes=num_classes,
+                 *args, **kwargs)  # kernel_size is changed by patch_size

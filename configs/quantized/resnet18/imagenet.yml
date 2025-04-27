@@ -2,7 +2,7 @@ dataset: image_folder
 num_classes: 1000
 train_split: train
 val_split: validation
-batch_size: 1024
+batch_size: 128
 img_size: 224
 mean:
     - 0.485
@@ -42,23 +42,23 @@ use_kd: False
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth
 initial_checkpoint: pretrained/resnet18_image.pth
-resume: output/train/20250423-124710-ResNet18-224/last.pth.tar
+# resume: output/train/20250423-124710-ResNet18-224/last.pth.tar
 powerof2: True
-log_name: resnet18_imagenet
+log_name: resnet18_imagenet_avgpool
 wq_per_channel: True
-wq_enable: True
+wq_enable: False
 wq_mode: "LSQ"
 wq_bitw: 32
-aq_enable: True
+aq_enable: False
 aq_asym: True
 aq_mode: "LSQ"
 aq_bitw: 32
-resq_enable: True
+resq_enable: False
 resq_mode: "LSQ"
 resq_bitw: 16
 # w4a4
-bw_list: 4, 4, 4, 4, 4, 3, 4, 3, 3, 4, 3, 3, 3, 3, 2, 3
-ba_list: 4, 4, 4, 4, 4, 4, 3, 4, 4, 2, 3, 3, 3, 2, 3, 2
+# bw_list: 4, 4, 4, 4, 4, 3, 4, 3, 3, 4, 3, 3, 3, 3, 2, 3
+# ba_list: 4, 4, 4, 4, 4, 4, 3, 4, 4, 2, 3, 3, 3, 2, 3, 2
 qmodules: 
   - "convbn_first;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"

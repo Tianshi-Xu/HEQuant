@@ -160,4 +160,4 @@ def test():
     #     print(name)
         # print(layer)
     # net = resnet18(weights=ResNet18_Weights.DEFAULT)
-test()
+# test()

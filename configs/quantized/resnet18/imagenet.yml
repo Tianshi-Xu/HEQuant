@@ -2,7 +2,7 @@ dataset: image_folder
 num_classes: 1000
 train_split: train
 val_split: validation
-batch_size: 128
+batch_size: 1024
 img_size: 224
 mean:
     - 0.485

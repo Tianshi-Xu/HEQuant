@@ -42,7 +42,7 @@ use_kd: False
 teacher: ResNet18
 teacher_checkpoint: pretrained/resnet18_image.pth
 initial_checkpoint: pretrained/resnet18_image.pth
-resume: output/train/20250423-124710-ResNet18-224/last.pth.tar
+resume: output/train/20250423-155741-ResNet18-224/last.pth.tar.pth
 powerof2: True
 log_name: resnet18_imagenet
 wq_per_channel: True

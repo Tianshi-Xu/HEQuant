@@ -1,0 +1,2318 @@
+2025-06-05 16:40:47,432 - train - INFO - Test: [   0/97]  Time: 3.980 (3.980)  Loss: 54.7837 (54.7837)  Acc@1:  0.0000 ( 0.0000)  Acc@5:  0.0000 ( 0.0000)
+2025-06-05 16:41:44,969 - train - INFO - Test: [  50/97]  Time: 2.160 (1.206)  Loss: 54.3785 (49.8431)  Acc@1:  0.0000 ( 0.0689)  Acc@5:  0.0000 ( 0.2949)
+2025-06-05 16:43:58,060 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 16:43:58,060 - train - INFO - Get QAT model...
+2025-06-05 16:43:58,237 - train - INFO - ResNet(
+  (relu): ReLU(
+    (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+  (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+  (maxpool): AvgPool2d(kernel_size=3, stride=2, padding=1)
+  (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (convbn_first): QConvBn2d(
+    3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+    (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (layer1): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer2): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-7, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-7, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer3): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-7, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer4): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-1, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-1, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-1, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (avgpool): AdaptiveAvgPool2d(output_size=(1, 1))
+  (fc): QLinear(
+    in_features=512, out_features=1000, bias=True
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=255, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+)
+2025-06-05 16:43:59,031 - train - INFO - mse: 0.0
+2025-06-05 16:43:59,097 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 16:43:59,097 - train - INFO - Scheduled epochs: 60
+2025-06-05 16:44:09,625 - train - INFO - Test: [   0/97]  Time: 4.048 (4.048)  Loss: 21.0699 (21.0699)  Acc@1:  0.1953 ( 0.1953)  Acc@5:  1.7578 ( 1.7578)
+2025-06-05 16:45:06,637 - train - INFO - Test: [  50/97]  Time: 1.696 (1.197)  Loss: 22.6442 (20.5823)  Acc@1:  5.2734 ( 2.0604)  Acc@5: 10.5469 ( 6.8206)
+2025-06-05 16:45:29,155 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 16:45:29,155 - train - INFO - Get QAT model...
+2025-06-05 16:45:29,300 - train - INFO - ResNet(
+  (relu): ReLU(
+    (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+  (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+  (maxpool): AvgPool2d(kernel_size=3, stride=2, padding=1)
+  (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (convbn_first): QConvBn2d(
+    3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+    (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (layer1): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer2): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-15, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-7, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-7, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer3): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-7, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer4): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-3, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-1, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-1, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-1, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (avgpool): AdaptiveAvgPool2d(output_size=(1, 1))
+  (fc): QLinear(
+    in_features=512, out_features=1000, bias=True
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=255, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+)
+2025-06-05 16:45:30,066 - train - INFO - mse: 0.0
+2025-06-05 16:45:30,143 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 16:45:30,143 - train - INFO - Scheduled epochs: 60
+2025-06-05 16:45:40,620 - train - INFO - Test: [   0/97]  Time: 3.934 (3.934)  Loss: 21.0699 (21.0699)  Acc@1:  0.1953 ( 0.1953)  Acc@5:  1.7578 ( 1.7578)
+2025-06-05 16:48:29,986 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 16:48:29,986 - train - INFO - Get QAT model...
+2025-06-05 16:48:30,128 - train - INFO - ResNet(
+  (relu): ReLU(
+    (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+  (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+  (maxpool): AvgPool2d(kernel_size=3, stride=2, padding=1)
+  (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (convbn_first): QConvBn2d(
+    3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-128, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+    (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (layer1): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer2): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-8, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-8, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer3): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-8, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer4): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-2, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-2, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-2, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (avgpool): AdaptiveAvgPool2d(output_size=(1, 1))
+  (fc): QLinear(
+    in_features=512, out_features=1000, bias=True
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-128, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=255, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+)
+2025-06-05 16:48:30,901 - train - INFO - mse: 0.0
+2025-06-05 16:48:30,974 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 16:48:30,974 - train - INFO - Scheduled epochs: 60
+2025-06-05 16:48:41,467 - train - INFO - Test: [   0/97]  Time: 3.952 (3.952)  Loss:  1.0942 (1.0942)  Acc@1: 73.8281 (73.8281)  Acc@5: 92.3828 (92.3828)
+2025-06-05 16:48:52,130 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 16:48:52,130 - train - INFO - Get QAT model...
+2025-06-05 16:48:52,270 - train - INFO - ResNet(
+  (relu): ReLU(
+    (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+  (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+  (maxpool): AvgPool2d(kernel_size=3, stride=2, padding=1)
+  (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (convbn_first): QConvBn2d(
+    3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-128, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=127, neg=-127, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+    (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (layer1): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer2): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=5, pos=15, neg=-16, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-8, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-8, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer3): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=4, pos=7, neg=-8, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=4, pos=15, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (layer4): Sequential(
+    (0): BasicBlock(
+      (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=3, pos=3, neg=-4, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-2, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential(
+        (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (quan_a_fn): LsqQuantizer(bit=16, pos=32767, neg=-32767, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=True, per_channel=False, apot=False )
+      )
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+    (1): BasicBlock(
+      (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn1): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-2, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (convbn2): QConvBn2d(
+        512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quan_w_fn): LsqQuantizer(bit=2, pos=1, neg=-2, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+        (quan_a_fn): LsqQuantizer(bit=3, pos=7, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (downsample): Sequential()
+      (relu2): ReLU(
+        (quan_a_fn): LsqQuantizer(bit=16, pos=65535, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+      )
+    )
+  )
+  (avgpool): AdaptiveAvgPool2d(output_size=(1, 1))
+  (fc): QLinear(
+    in_features=512, out_features=1000, bias=True
+    (quan_w_fn): LsqQuantizer(bit=8, pos=127, neg=-128, norm=(False, 1e-05, 1.0), all_positive=False, symmetric=False, per_channel=True, apot=False )
+    (quan_a_fn): LsqQuantizer(bit=8, pos=255, neg=0, norm=(False, 1e-05, 1.0), all_positive=True, symmetric=False, per_channel=False, apot=False )
+  )
+)
+2025-06-05 16:48:53,055 - train - INFO - mse: 0.0
+2025-06-05 16:48:53,121 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 16:48:53,121 - train - INFO - Scheduled epochs: 60
+2025-06-05 16:49:03,558 - train - INFO - Test: [   0/97]  Time: 3.838 (3.838)  Loss:  1.0942 (1.0942)  Acc@1: 73.8281 (73.8281)  Acc@5: 92.3828 (92.3828)
+2025-06-05 16:50:01,654 - train - INFO - Test: [  50/97]  Time: 1.894 (1.214)  Loss:  1.7982 (1.4011)  Acc@1: 62.3047 (68.1334)  Acc@5: 83.9844 (88.8174)
+2025-06-05 16:50:55,417 - train - INFO - Test: [  97/97]  Time: 0.988 (1.181)  Loss:  1.5357 (1.6092)  Acc@1: 64.8810 (64.4560)  Acc@5: 85.1190 (85.7000)
+2025-06-05 16:54:47,039 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 16:54:47,040 - train - INFO - Get QAT model...
+2025-06-05 16:54:47,792 - train - INFO - mse: 0.0
+2025-06-05 16:54:47,863 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 16:54:47,864 - train - INFO - Scheduled epochs: 60
+2025-06-05 16:54:58,383 - train - INFO - Test: [   0/97]  Time: 3.905 (3.905)  Loss:  1.0942 (1.0942)  Acc@1: 73.8281 (73.8281)  Acc@5: 92.3828 (92.3828)
+2025-06-05 16:55:05,472 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 16:55:05,472 - train - INFO - Get QAT model...
+2025-06-05 16:55:05,623 - train - INFO - current_bacc:[14, 14, 14, 14, 14, 15, 15, 14, 15, 14, 13, 13, 13, 14, 14, 14]
+2025-06-05 16:55:06,363 - train - INFO - mse: 0.0
+2025-06-05 16:55:06,438 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 16:55:06,438 - train - INFO - Scheduled epochs: 60
+2025-06-05 16:55:17,286 - train - INFO - Test: [   0/97]  Time: 4.290 (4.290)  Loss:  1.0942 (1.0942)  Acc@1: 73.8281 (73.8281)  Acc@5: 92.3828 (92.3828)
+2025-06-05 16:56:15,415 - train - INFO - Test: [  50/97]  Time: 2.110 (1.224)  Loss:  1.7982 (1.4011)  Acc@1: 62.3047 (68.1334)  Acc@5: 83.9844 (88.8174)
+2025-06-05 16:57:08,280 - train - INFO - Test: [  97/97]  Time: 0.387 (1.176)  Loss:  1.5357 (1.6092)  Acc@1: 64.8810 (64.4560)  Acc@5: 85.1190 (85.7000)
+2025-06-05 17:10:12,713 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 17:10:12,713 - train - INFO - Get QAT model...
+2025-06-05 17:10:12,857 - train - INFO - current_bacc:[14, 14, 14, 14, 14, 15, 15, 14, 15, 14, 13, 13, 13, 14, 14, 14]
+2025-06-05 17:10:13,488 - train - INFO - mse: 0.0
+2025-06-05 17:10:13,562 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 17:10:13,563 - train - INFO - Scheduled epochs: 60
+2025-06-05 17:10:20,112 - train - INFO - Verifying initial model in training dataset
+2025-06-05 17:10:25,822 - train - INFO - batch_idx:0
+2025-06-05 17:10:25,823 - train - INFO - len loader.dataset:1281167
+2025-06-05 17:10:29,219 - train - INFO - target_block_size:4
+2025-06-05 17:10:29,235 - train - INFO - sensitivity_w2a2:5.261885576146597e-07
+2025-06-05 17:10:29,248 - train - INFO - sensitivity_w2a3:4.209153985357261e-07
+2025-06-05 17:10:29,261 - train - INFO - sensitivity_w2a4:4.794235337612918e-07
+2025-06-05 17:10:29,274 - train - INFO - sensitivity_w3a2:4.4951661948289257e-07
+2025-06-05 17:10:29,287 - train - INFO - sensitivity_w3a3:3.6234871458873386e-07
+2025-06-05 17:10:29,301 - train - INFO - sensitivity_w3a4:3.0893937719156384e-07
+2025-06-05 17:10:29,314 - train - INFO - sensitivity_w4a2:4.2804990130207443e-07
+2025-06-05 17:10:29,327 - train - INFO - sensitivity_w4a3:3.198777278612397e-07
+2025-06-05 17:10:29,340 - train - INFO - sensitivity_w4a4:2.0607004103112558e-07
+2025-06-05 17:10:29,353 - train - INFO - sensitivity_w5a2:3.7211111703072675e-07
+2025-06-05 17:10:29,366 - train - INFO - sensitivity_w5a3:3.044230538762349e-07
+2025-06-05 17:10:29,379 - train - INFO - sensitivity_w5a4:1.8959963199449703e-07
+2025-06-05 17:10:29,392 - train - INFO - sensitivity_w6a2:3.86423153031501e-07
+2025-06-05 17:10:29,405 - train - INFO - sensitivity_w6a3:2.9431677717184357e-07
+2025-06-05 17:10:29,419 - train - INFO - sensitivity_w6a4:1.6171843242318573e-07
+2025-06-05 17:10:29,432 - train - INFO - sensitivity_w7a2:3.813791522588872e-07
+2025-06-05 17:10:29,445 - train - INFO - sensitivity_w7a3:2.9307562954272726e-07
+2025-06-05 17:10:29,458 - train - INFO - sensitivity_w7a4:1.5636737771274056e-07
+2025-06-05 17:10:29,471 - train - INFO - sensitivity_w8a2:3.738346663340053e-07
+2025-06-05 17:10:29,484 - train - INFO - sensitivity_w8a3:2.863684471776651e-07
+2025-06-05 17:10:29,497 - train - INFO - sensitivity_w8a4:1.5166355638029927e-07
+2025-06-05 17:10:29,498 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:10:29,498 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:10:29,498 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:10:29,499 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:10:29,499 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:10:29,499 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:10:29,500 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:10:29,500 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:10:29,501 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:10:29,501 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:10:29,501 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:10:29,502 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:10:29,502 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:10:29,502 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:10:29,503 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:10:29,503 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:10:29,503 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:10:29,504 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:10:29,504 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:10:29,504 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:10:29,505 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:10:29,518 - train - INFO - sensitivity_w2a2:1.0680398787599188e-07
+2025-06-05 17:10:29,531 - train - INFO - sensitivity_w2a3:8.264625250831159e-08
+2025-06-05 17:10:29,545 - train - INFO - sensitivity_w2a4:7.398806189939933e-08
+2025-06-05 17:10:29,558 - train - INFO - sensitivity_w3a2:6.737550961588568e-08
+2025-06-05 17:10:29,571 - train - INFO - sensitivity_w3a3:4.568499178958518e-08
+2025-06-05 17:10:29,584 - train - INFO - sensitivity_w3a4:3.384283431273616e-08
+2025-06-05 17:10:29,597 - train - INFO - sensitivity_w4a2:5.711236994443425e-08
+2025-06-05 17:10:29,610 - train - INFO - sensitivity_w4a3:3.535931014653215e-08
+2025-06-05 17:10:29,623 - train - INFO - sensitivity_w4a4:2.183494274277109e-08
+2025-06-05 17:10:29,636 - train - INFO - sensitivity_w5a2:5.085216159272932e-08
+2025-06-05 17:10:29,650 - train - INFO - sensitivity_w5a3:2.970903167920369e-08
+2025-06-05 17:10:29,663 - train - INFO - sensitivity_w5a4:1.6028621985242353e-08
+2025-06-05 17:10:29,676 - train - INFO - sensitivity_w6a2:4.94343801449304e-08
+2025-06-05 17:10:29,689 - train - INFO - sensitivity_w6a3:2.768480023007669e-08
+2025-06-05 17:10:29,702 - train - INFO - sensitivity_w6a4:1.446401398652597e-08
+2025-06-05 17:10:29,715 - train - INFO - sensitivity_w7a2:4.8320185186412346e-08
+2025-06-05 17:10:29,728 - train - INFO - sensitivity_w7a3:2.662736164893431e-08
+2025-06-05 17:10:29,741 - train - INFO - sensitivity_w7a4:1.3045010405221547e-08
+2025-06-05 17:10:29,755 - train - INFO - sensitivity_w8a2:4.770677719534433e-08
+2025-06-05 17:10:29,768 - train - INFO - sensitivity_w8a3:2.6048226686725684e-08
+2025-06-05 17:10:29,781 - train - INFO - sensitivity_w8a4:1.1953174450241022e-08
+2025-06-05 17:10:29,781 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:10:29,782 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:10:29,782 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:10:29,782 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:10:29,783 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:10:29,783 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:10:29,783 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:10:29,784 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:10:29,784 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:10:29,785 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:10:29,785 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:10:29,785 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:10:29,786 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:10:29,786 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:10:29,786 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:10:29,787 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:10:29,787 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:10:29,787 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:10:29,788 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:10:29,788 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:10:29,788 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:10:29,802 - train - INFO - sensitivity_w2a2:1.456471068195242e-07
+2025-06-05 17:10:29,815 - train - INFO - sensitivity_w2a3:1.4877466014695528e-07
+2025-06-05 17:10:29,828 - train - INFO - sensitivity_w2a4:1.0663840299685035e-07
+2025-06-05 17:10:29,841 - train - INFO - sensitivity_w3a2:1.0639380576549229e-07
+2025-06-05 17:10:29,854 - train - INFO - sensitivity_w3a3:9.72867439941183e-08
+2025-06-05 17:10:29,868 - train - INFO - sensitivity_w3a4:5.7019526877866156e-08
+2025-06-05 17:10:29,881 - train - INFO - sensitivity_w4a2:9.501235354036908e-08
+2025-06-05 17:10:29,894 - train - INFO - sensitivity_w4a3:8.107092241971259e-08
+2025-06-05 17:10:29,907 - train - INFO - sensitivity_w4a4:4.000531106385097e-08
+2025-06-05 17:10:29,920 - train - INFO - sensitivity_w5a2:9.087598584756051e-08
+2025-06-05 17:10:29,933 - train - INFO - sensitivity_w5a3:7.602195495337583e-08
+2025-06-05 17:10:29,946 - train - INFO - sensitivity_w5a4:3.4881644239703746e-08
+2025-06-05 17:10:29,959 - train - INFO - sensitivity_w6a2:9.026392433497676e-08
+2025-06-05 17:10:29,972 - train - INFO - sensitivity_w6a3:7.502157473027182e-08
+2025-06-05 17:10:29,986 - train - INFO - sensitivity_w6a4:3.1142658230010056e-08
+2025-06-05 17:10:29,999 - train - INFO - sensitivity_w7a2:9.009187351693981e-08
+2025-06-05 17:10:30,012 - train - INFO - sensitivity_w7a3:7.469037655027932e-08
+2025-06-05 17:10:30,025 - train - INFO - sensitivity_w7a4:3.0517391280682205e-08
+2025-06-05 17:10:30,038 - train - INFO - sensitivity_w8a2:8.910780735504886e-08
+2025-06-05 17:10:30,051 - train - INFO - sensitivity_w8a3:7.277494518120875e-08
+2025-06-05 17:10:30,064 - train - INFO - sensitivity_w8a4:2.8780393179772545e-08
+2025-06-05 17:10:30,065 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:10:30,065 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:10:30,065 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:10:30,066 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:10:30,066 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:10:30,066 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:10:30,067 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:10:30,067 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:10:30,067 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:10:30,068 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:10:30,068 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:10:30,069 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:10:30,069 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:10:30,069 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:10:30,070 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:10:30,070 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:10:30,070 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:10:30,071 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:10:30,071 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:10:30,071 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:10:30,072 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:10:30,085 - train - INFO - sensitivity_w2a2:6.715676192925457e-08
+2025-06-05 17:10:30,098 - train - INFO - sensitivity_w2a3:4.116758844929791e-08
+2025-06-05 17:10:30,112 - train - INFO - sensitivity_w2a4:3.9121449191270585e-08
+2025-06-05 17:10:30,125 - train - INFO - sensitivity_w3a2:4.0114162658255736e-08
+2025-06-05 17:10:30,138 - train - INFO - sensitivity_w3a3:1.5253323937258756e-08
+2025-06-05 17:10:30,151 - train - INFO - sensitivity_w3a4:1.2823205608469834e-08
+2025-06-05 17:10:30,164 - train - INFO - sensitivity_w4a2:3.274168847156034e-08
+2025-06-05 17:10:30,177 - train - INFO - sensitivity_w4a3:7.87385179279454e-09
+2025-06-05 17:10:30,191 - train - INFO - sensitivity_w4a4:5.58577761822221e-09
+2025-06-05 17:10:30,204 - train - INFO - sensitivity_w5a2:3.0756414304278223e-08
+2025-06-05 17:10:30,217 - train - INFO - sensitivity_w5a3:5.490717214229335e-09
+2025-06-05 17:10:30,230 - train - INFO - sensitivity_w5a4:3.2190432541767677e-09
+2025-06-05 17:10:30,243 - train - INFO - sensitivity_w6a2:2.9810493629156554e-08
+2025-06-05 17:10:30,256 - train - INFO - sensitivity_w6a3:4.445605661373975e-09
+2025-06-05 17:10:30,269 - train - INFO - sensitivity_w6a4:2.166716139839764e-09
+2025-06-05 17:10:30,283 - train - INFO - sensitivity_w7a2:2.9428063541558913e-08
+2025-06-05 17:10:30,296 - train - INFO - sensitivity_w7a3:4.062485459144227e-09
+2025-06-05 17:10:30,309 - train - INFO - sensitivity_w7a4:1.732620713568167e-09
+2025-06-05 17:10:30,322 - train - INFO - sensitivity_w8a2:2.8990680078777586e-08
+2025-06-05 17:10:30,335 - train - INFO - sensitivity_w8a3:3.752088417741106e-09
+2025-06-05 17:10:30,348 - train - INFO - sensitivity_w8a4:1.3907093254772462e-09
+2025-06-05 17:10:30,349 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:10:30,349 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:10:30,349 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:10:30,350 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:10:30,350 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:10:30,351 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:10:30,351 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:10:30,351 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:10:30,352 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:10:30,352 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:10:30,352 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:10:30,353 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:10:30,353 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:10:30,353 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:10:30,354 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:10:30,354 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:10:30,355 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:10:30,355 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:10:30,355 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:10:30,356 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:10:30,356 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:10:30,366 - train - INFO - sensitivity_w2a2:2.7354136022950115e-07
+2025-06-05 17:10:30,375 - train - INFO - sensitivity_w2a3:1.840216441451048e-07
+2025-06-05 17:10:30,384 - train - INFO - sensitivity_w2a4:1.583379685143882e-07
+2025-06-05 17:10:30,394 - train - INFO - sensitivity_w3a2:1.8570153770269826e-07
+2025-06-05 17:10:30,403 - train - INFO - sensitivity_w3a3:9.956416135992185e-08
+2025-06-05 17:10:30,412 - train - INFO - sensitivity_w3a4:7.13590964096511e-08
+2025-06-05 17:10:30,422 - train - INFO - sensitivity_w4a2:1.6475438258112263e-07
+2025-06-05 17:10:30,431 - train - INFO - sensitivity_w4a3:7.761391884741897e-08
+2025-06-05 17:10:30,440 - train - INFO - sensitivity_w4a4:5.028676497431661e-08
+2025-06-05 17:10:30,450 - train - INFO - sensitivity_w5a2:1.581852160370545e-07
+2025-06-05 17:10:30,459 - train - INFO - sensitivity_w5a3:7.233786192273328e-08
+2025-06-05 17:10:30,468 - train - INFO - sensitivity_w5a4:4.514949836220694e-08
+2025-06-05 17:10:30,478 - train - INFO - sensitivity_w6a2:1.5439532319305727e-07
+2025-06-05 17:10:30,487 - train - INFO - sensitivity_w6a3:6.704348010089234e-08
+2025-06-05 17:10:30,496 - train - INFO - sensitivity_w6a4:3.943165083342137e-08
+2025-06-05 17:10:30,506 - train - INFO - sensitivity_w7a2:1.5341393577728013e-07
+2025-06-05 17:10:30,515 - train - INFO - sensitivity_w7a3:6.552665610115582e-08
+2025-06-05 17:10:30,524 - train - INFO - sensitivity_w7a4:3.766550804584767e-08
+2025-06-05 17:10:30,534 - train - INFO - sensitivity_w8a2:1.5242962092543166e-07
+2025-06-05 17:10:30,543 - train - INFO - sensitivity_w8a3:6.470182256634871e-08
+2025-06-05 17:10:30,553 - train - INFO - sensitivity_w8a4:3.677925164424778e-08
+2025-06-05 17:10:30,553 - train - INFO - latency_accumulation_b6:584.9600219726562
+2025-06-05 17:10:30,553 - train - INFO - latency_accumulation_b7:584.9600219726562
+2025-06-05 17:10:30,554 - train - INFO - latency_accumulation_b8:584.9600219726562
+2025-06-05 17:10:30,554 - train - INFO - latency_accumulation_b9:584.9600219726562
+2025-06-05 17:10:30,554 - train - INFO - latency_accumulation_b10:584.9600219726562
+2025-06-05 17:10:30,555 - train - INFO - latency_accumulation_b11:584.9600219726562
+2025-06-05 17:10:30,555 - train - INFO - latency_accumulation_b12:584.9600219726562
+2025-06-05 17:10:30,556 - train - INFO - latency_accumulation_b13:584.9600219726562
+2025-06-05 17:10:30,556 - train - INFO - latency_accumulation_b14:584.9600219726562
+2025-06-05 17:10:30,556 - train - INFO - latency_accumulation_b15:584.9600219726562
+2025-06-05 17:10:30,557 - train - INFO - latency_accumulation_b16:584959983616.0
+2025-06-05 17:10:30,557 - train - INFO - latency_accumulation_b17:584959983616.0
+2025-06-05 17:10:30,557 - train - INFO - latency_accumulation_b18:584959983616.0
+2025-06-05 17:10:30,558 - train - INFO - latency_accumulation_b19:584959983616.0
+2025-06-05 17:10:30,558 - train - INFO - latency_accumulation_b20:584959983616.0
+2025-06-05 17:10:30,558 - train - INFO - latency_accumulation_b21:584959983616.0
+2025-06-05 17:10:30,559 - train - INFO - latency_accumulation_b22:584959983616.0
+2025-06-05 17:10:30,559 - train - INFO - latency_accumulation_b23:584959983616.0
+2025-06-05 17:10:30,559 - train - INFO - latency_accumulation_b24:584959983616.0
+2025-06-05 17:10:30,560 - train - INFO - latency_accumulation_b25:584959983616.0
+2025-06-05 17:10:30,560 - train - INFO - latency_accumulation_b26:584959983616.0
+2025-06-05 17:10:30,569 - train - INFO - sensitivity_w2a2:1.980980783855557e-07
+2025-06-05 17:10:30,576 - train - INFO - sensitivity_w2a3:1.7107365124502394e-07
+2025-06-05 17:10:30,583 - train - INFO - sensitivity_w2a4:1.2878575716968044e-07
+2025-06-05 17:10:30,590 - train - INFO - sensitivity_w3a2:1.1762696061623501e-07
+2025-06-05 17:10:30,597 - train - INFO - sensitivity_w3a3:9.452668336962233e-08
+2025-06-05 17:10:30,603 - train - INFO - sensitivity_w3a4:6.144712472178071e-08
+2025-06-05 17:10:30,610 - train - INFO - sensitivity_w4a2:9.840515247105941e-08
+2025-06-05 17:10:30,617 - train - INFO - sensitivity_w4a3:7.617339292664838e-08
+2025-06-05 17:10:30,624 - train - INFO - sensitivity_w4a4:4.243946349902217e-08
+2025-06-05 17:10:30,631 - train - INFO - sensitivity_w5a2:9.02478305420118e-08
+2025-06-05 17:10:30,638 - train - INFO - sensitivity_w5a3:6.837858990138557e-08
+2025-06-05 17:10:30,645 - train - INFO - sensitivity_w5a4:3.524869285342902e-08
+2025-06-05 17:10:30,652 - train - INFO - sensitivity_w6a2:8.635621639996316e-08
+2025-06-05 17:10:30,659 - train - INFO - sensitivity_w6a3:6.483440984084154e-08
+2025-06-05 17:10:30,665 - train - INFO - sensitivity_w6a4:3.1660391641707974e-08
+2025-06-05 17:10:30,672 - train - INFO - sensitivity_w7a2:8.495401715435946e-08
+2025-06-05 17:10:30,679 - train - INFO - sensitivity_w7a3:6.344133396396501e-08
+2025-06-05 17:10:30,686 - train - INFO - sensitivity_w7a4:3.0485402646718285e-08
+2025-06-05 17:10:30,693 - train - INFO - sensitivity_w8a2:8.469722700965576e-08
+2025-06-05 17:10:30,700 - train - INFO - sensitivity_w8a3:6.308405176014276e-08
+2025-06-05 17:10:30,707 - train - INFO - sensitivity_w8a4:3.024246453264823e-08
+2025-06-05 17:10:30,708 - train - INFO - latency_accumulation_b6:456.0400085449219
+2025-06-05 17:10:30,709 - train - INFO - latency_accumulation_b7:456.0400085449219
+2025-06-05 17:10:30,711 - train - INFO - latency_accumulation_b8:456.0400085449219
+2025-06-05 17:10:30,712 - train - INFO - latency_accumulation_b9:456.0400085449219
+2025-06-05 17:10:30,713 - train - INFO - latency_accumulation_b10:456.0400085449219
+2025-06-05 17:10:30,715 - train - INFO - latency_accumulation_b11:456.0400085449219
+2025-06-05 17:10:30,716 - train - INFO - latency_accumulation_b12:456.0400085449219
+2025-06-05 17:10:30,717 - train - INFO - latency_accumulation_b13:456.0400085449219
+2025-06-05 17:10:30,718 - train - INFO - latency_accumulation_b14:456.0400085449219
+2025-06-05 17:10:30,720 - train - INFO - latency_accumulation_b15:456.0400085449219
+2025-06-05 17:10:30,721 - train - INFO - latency_accumulation_b16:456039989248.0
+2025-06-05 17:10:30,722 - train - INFO - latency_accumulation_b17:456039989248.0
+2025-06-05 17:10:30,724 - train - INFO - latency_accumulation_b18:456039989248.0
+2025-06-05 17:10:30,725 - train - INFO - latency_accumulation_b19:456039989248.0
+2025-06-05 17:10:30,726 - train - INFO - latency_accumulation_b20:456039989248.0
+2025-06-05 17:10:30,727 - train - INFO - latency_accumulation_b21:456039989248.0
+2025-06-05 17:10:30,729 - train - INFO - latency_accumulation_b22:456039989248.0
+2025-06-05 17:10:30,730 - train - INFO - latency_accumulation_b23:456039989248.0
+2025-06-05 17:10:30,731 - train - INFO - latency_accumulation_b24:456039989248.0
+2025-06-05 17:10:30,733 - train - INFO - latency_accumulation_b25:456039989248.0
+2025-06-05 17:10:30,734 - train - INFO - latency_accumulation_b26:456039989248.0
+2025-06-05 17:10:30,742 - train - INFO - sensitivity_w2a2:1.0633599600851085e-07
+2025-06-05 17:10:30,749 - train - INFO - sensitivity_w2a3:9.088834218573538e-08
+2025-06-05 17:10:30,756 - train - INFO - sensitivity_w2a4:8.040089483074553e-08
+2025-06-05 17:10:30,763 - train - INFO - sensitivity_w3a2:5.0935042850142054e-08
+2025-06-05 17:10:30,770 - train - INFO - sensitivity_w3a3:3.4917071900508745e-08
+2025-06-05 17:10:30,776 - train - INFO - sensitivity_w3a4:2.4830058009683853e-08
+2025-06-05 17:10:30,783 - train - INFO - sensitivity_w4a2:3.671314985354002e-08
+2025-06-05 17:10:30,790 - train - INFO - sensitivity_w4a3:2.128185627725543e-08
+2025-06-05 17:10:30,797 - train - INFO - sensitivity_w4a4:1.1100866892377326e-08
+2025-06-05 17:10:30,804 - train - INFO - sensitivity_w5a2:3.1512296772007176e-08
+2025-06-05 17:10:30,811 - train - INFO - sensitivity_w5a3:1.619692113763449e-08
+2025-06-05 17:10:30,818 - train - INFO - sensitivity_w5a4:6.145755460096325e-09
+2025-06-05 17:10:30,825 - train - INFO - sensitivity_w6a2:2.8984858957414872e-08
+2025-06-05 17:10:30,832 - train - INFO - sensitivity_w6a3:1.3811599863799984e-08
+2025-06-05 17:10:30,838 - train - INFO - sensitivity_w6a4:3.729789810336115e-09
+2025-06-05 17:10:30,845 - train - INFO - sensitivity_w7a2:2.7961025494960268e-08
+2025-06-05 17:10:30,852 - train - INFO - sensitivity_w7a3:1.2877997335181135e-08
+2025-06-05 17:10:30,859 - train - INFO - sensitivity_w7a4:2.891298311880064e-09
+2025-06-05 17:10:30,866 - train - INFO - sensitivity_w8a2:2.770191542822431e-08
+2025-06-05 17:10:30,873 - train - INFO - sensitivity_w8a3:1.2593700304819322e-08
+2025-06-05 17:10:30,880 - train - INFO - sensitivity_w8a4:2.6401318908853e-09
+2025-06-05 17:10:30,881 - train - INFO - latency_accumulation_b6:456.0400085449219
+2025-06-05 17:10:30,882 - train - INFO - latency_accumulation_b7:456.0400085449219
+2025-06-05 17:10:30,884 - train - INFO - latency_accumulation_b8:456.0400085449219
+2025-06-05 17:10:30,885 - train - INFO - latency_accumulation_b9:456.0400085449219
+2025-06-05 17:10:30,886 - train - INFO - latency_accumulation_b10:456.0400085449219
+2025-06-05 17:10:30,887 - train - INFO - latency_accumulation_b11:456.0400085449219
+2025-06-05 17:10:30,889 - train - INFO - latency_accumulation_b12:456.0400085449219
+2025-06-05 17:10:30,890 - train - INFO - latency_accumulation_b13:456.0400085449219
+2025-06-05 17:10:30,891 - train - INFO - latency_accumulation_b14:456.0400085449219
+2025-06-05 17:10:30,892 - train - INFO - latency_accumulation_b15:456.0400085449219
+2025-06-05 17:10:30,894 - train - INFO - latency_accumulation_b16:456039989248.0
+2025-06-05 17:10:30,895 - train - INFO - latency_accumulation_b17:456039989248.0
+2025-06-05 17:10:30,896 - train - INFO - latency_accumulation_b18:456039989248.0
+2025-06-05 17:10:30,898 - train - INFO - latency_accumulation_b19:456039989248.0
+2025-06-05 17:10:30,899 - train - INFO - latency_accumulation_b20:456039989248.0
+2025-06-05 17:10:30,900 - train - INFO - latency_accumulation_b21:456039989248.0
+2025-06-05 17:10:30,901 - train - INFO - latency_accumulation_b22:456039989248.0
+2025-06-05 17:10:30,903 - train - INFO - latency_accumulation_b23:456039989248.0
+2025-06-05 17:10:30,904 - train - INFO - latency_accumulation_b24:456039989248.0
+2025-06-05 17:10:30,905 - train - INFO - latency_accumulation_b25:456039989248.0
+2025-06-05 17:10:30,907 - train - INFO - latency_accumulation_b26:456039989248.0
+2025-06-05 17:10:30,915 - train - INFO - sensitivity_w2a2:8.719227650999528e-08
+2025-06-05 17:10:30,922 - train - INFO - sensitivity_w2a3:7.890695741252785e-08
+2025-06-05 17:10:30,929 - train - INFO - sensitivity_w2a4:4.802878095233609e-08
+2025-06-05 17:10:30,935 - train - INFO - sensitivity_w3a2:6.070494862342457e-08
+2025-06-05 17:10:30,942 - train - INFO - sensitivity_w3a3:5.2446608833633945e-08
+2025-06-05 17:10:30,949 - train - INFO - sensitivity_w3a4:2.289240619290922e-08
+2025-06-05 17:10:30,956 - train - INFO - sensitivity_w4a2:5.3893757012701826e-08
+2025-06-05 17:10:30,963 - train - INFO - sensitivity_w4a3:4.5842316609423506e-08
+2025-06-05 17:10:30,970 - train - INFO - sensitivity_w4a4:1.64764255572436e-08
+2025-06-05 17:10:30,977 - train - INFO - sensitivity_w5a2:5.1097082121032145e-08
+2025-06-05 17:10:30,984 - train - INFO - sensitivity_w5a3:4.296743938425607e-08
+2025-06-05 17:10:30,990 - train - INFO - sensitivity_w5a4:1.3468624437962262e-08
+2025-06-05 17:10:30,997 - train - INFO - sensitivity_w6a2:4.967259670252133e-08
+2025-06-05 17:10:31,004 - train - INFO - sensitivity_w6a3:4.1444621956543415e-08
+2025-06-05 17:10:31,011 - train - INFO - sensitivity_w6a4:1.201283161833544e-08
+2025-06-05 17:10:31,018 - train - INFO - sensitivity_w7a2:4.935471764611066e-08
+2025-06-05 17:10:31,025 - train - INFO - sensitivity_w7a3:4.11295815183621e-08
+2025-06-05 17:10:31,032 - train - INFO - sensitivity_w7a4:1.1658025655947313e-08
+2025-06-05 17:10:31,039 - train - INFO - sensitivity_w8a2:4.903620265395148e-08
+2025-06-05 17:10:31,046 - train - INFO - sensitivity_w8a3:4.0881069196530007e-08
+2025-06-05 17:10:31,053 - train - INFO - sensitivity_w8a4:1.1458768156558108e-08
+2025-06-05 17:10:31,054 - train - INFO - latency_accumulation_b6:456.0400085449219
+2025-06-05 17:10:31,055 - train - INFO - latency_accumulation_b7:456.0400085449219
+2025-06-05 17:10:31,056 - train - INFO - latency_accumulation_b8:456.0400085449219
+2025-06-05 17:10:31,058 - train - INFO - latency_accumulation_b9:456.0400085449219
+2025-06-05 17:10:31,059 - train - INFO - latency_accumulation_b10:456.0400085449219
+2025-06-05 17:10:31,060 - train - INFO - latency_accumulation_b11:456.0400085449219
+2025-06-05 17:10:31,062 - train - INFO - latency_accumulation_b12:456.0400085449219
+2025-06-05 17:10:31,063 - train - INFO - latency_accumulation_b13:456.0400085449219
+2025-06-05 17:10:31,064 - train - INFO - latency_accumulation_b14:456.0400085449219
+2025-06-05 17:10:31,065 - train - INFO - latency_accumulation_b15:456.0400085449219
+2025-06-05 17:10:31,067 - train - INFO - latency_accumulation_b16:456039989248.0
+2025-06-05 17:10:31,068 - train - INFO - latency_accumulation_b17:456039989248.0
+2025-06-05 17:10:31,069 - train - INFO - latency_accumulation_b18:456039989248.0
+2025-06-05 17:10:31,071 - train - INFO - latency_accumulation_b19:456039989248.0
+2025-06-05 17:10:31,072 - train - INFO - latency_accumulation_b20:456039989248.0
+2025-06-05 17:10:31,073 - train - INFO - latency_accumulation_b21:456039989248.0
+2025-06-05 17:10:31,074 - train - INFO - latency_accumulation_b22:456039989248.0
+2025-06-05 17:10:31,076 - train - INFO - latency_accumulation_b23:456039989248.0
+2025-06-05 17:10:31,077 - train - INFO - latency_accumulation_b24:456039989248.0
+2025-06-05 17:10:31,078 - train - INFO - latency_accumulation_b25:456039989248.0
+2025-06-05 17:10:31,079 - train - INFO - latency_accumulation_b26:456039989248.0
+2025-06-05 17:10:31,086 - train - INFO - sensitivity_w2a2:1.3271728960262408e-07
+2025-06-05 17:10:31,091 - train - INFO - sensitivity_w2a3:1.1535676236462677e-07
+2025-06-05 17:10:31,097 - train - INFO - sensitivity_w2a4:1.0937878869299311e-07
+2025-06-05 17:10:31,102 - train - INFO - sensitivity_w3a2:6.794029161483195e-08
+2025-06-05 17:10:31,108 - train - INFO - sensitivity_w3a3:5.074431541629565e-08
+2025-06-05 17:10:31,113 - train - INFO - sensitivity_w3a4:4.55596520509971e-08
+2025-06-05 17:10:31,118 - train - INFO - sensitivity_w4a2:4.539584352869497e-08
+2025-06-05 17:10:31,124 - train - INFO - sensitivity_w4a3:2.9265777357068146e-08
+2025-06-05 17:10:31,129 - train - INFO - sensitivity_w4a4:2.386326691805607e-08
+2025-06-05 17:10:31,135 - train - INFO - sensitivity_w5a2:3.8375812749791294e-08
+2025-06-05 17:10:31,141 - train - INFO - sensitivity_w5a3:2.2222341300448534e-08
+2025-06-05 17:10:31,146 - train - INFO - sensitivity_w5a4:1.7241838179415936e-08
+2025-06-05 17:10:31,152 - train - INFO - sensitivity_w6a2:3.550843885591348e-08
+2025-06-05 17:10:31,157 - train - INFO - sensitivity_w6a3:1.9519516669674886e-08
+2025-06-05 17:10:31,163 - train - INFO - sensitivity_w6a4:1.455402376393522e-08
+2025-06-05 17:10:31,168 - train - INFO - sensitivity_w7a2:3.478058374639659e-08
+2025-06-05 17:10:31,173 - train - INFO - sensitivity_w7a3:1.8869723561465435e-08
+2025-06-05 17:10:31,179 - train - INFO - sensitivity_w7a4:1.3914315921681464e-08
+2025-06-05 17:10:31,184 - train - INFO - sensitivity_w8a2:3.4492821043841104e-08
+2025-06-05 17:10:31,190 - train - INFO - sensitivity_w8a3:1.857011788786167e-08
+2025-06-05 17:10:31,195 - train - INFO - sensitivity_w8a4:1.3603701276565516e-08
+2025-06-05 17:10:31,196 - train - INFO - latency_accumulation_b6:632.9600219726562
+2025-06-05 17:10:31,198 - train - INFO - latency_accumulation_b7:632.9600219726562
+2025-06-05 17:10:31,199 - train - INFO - latency_accumulation_b8:632.9600219726562
+2025-06-05 17:10:31,200 - train - INFO - latency_accumulation_b9:632.9600219726562
+2025-06-05 17:10:31,201 - train - INFO - latency_accumulation_b10:632.9600219726562
+2025-06-05 17:10:31,203 - train - INFO - latency_accumulation_b11:632.9600219726562
+2025-06-05 17:10:31,204 - train - INFO - latency_accumulation_b12:632.9600219726562
+2025-06-05 17:10:31,205 - train - INFO - latency_accumulation_b13:632.9600219726562
+2025-06-05 17:10:31,207 - train - INFO - latency_accumulation_b14:632.9600219726562
+2025-06-05 17:10:31,208 - train - INFO - latency_accumulation_b15:632.9600219726562
+2025-06-05 17:10:31,209 - train - INFO - latency_accumulation_b16:632959991808.0
+2025-06-05 17:10:31,210 - train - INFO - latency_accumulation_b17:632959991808.0
+2025-06-05 17:10:31,212 - train - INFO - latency_accumulation_b18:632959991808.0
+2025-06-05 17:10:31,213 - train - INFO - latency_accumulation_b19:632959991808.0
+2025-06-05 17:10:31,214 - train - INFO - latency_accumulation_b20:632959991808.0
+2025-06-05 17:10:31,215 - train - INFO - latency_accumulation_b21:632959991808.0
+2025-06-05 17:10:31,217 - train - INFO - latency_accumulation_b22:632959991808.0
+2025-06-05 17:10:31,218 - train - INFO - latency_accumulation_b23:632959991808.0
+2025-06-05 17:10:31,219 - train - INFO - latency_accumulation_b24:632959991808.0
+2025-06-05 17:10:31,221 - train - INFO - latency_accumulation_b25:632959991808.0
+2025-06-05 17:10:31,222 - train - INFO - latency_accumulation_b26:632959991808.0
+2025-06-05 17:10:31,231 - train - INFO - sensitivity_w2a2:1.5207155001917272e-07
+2025-06-05 17:10:31,235 - train - INFO - sensitivity_w2a3:9.421247426644186e-08
+2025-06-05 17:10:31,240 - train - INFO - sensitivity_w2a4:9.010071266857267e-08
+2025-06-05 17:10:31,244 - train - INFO - sensitivity_w3a2:9.954501933862048e-08
+2025-06-05 17:10:31,248 - train - INFO - sensitivity_w3a3:4.282129140165125e-08
+2025-06-05 17:10:31,253 - train - INFO - sensitivity_w3a4:3.895889477689707e-08
+2025-06-05 17:10:31,257 - train - INFO - sensitivity_w4a2:8.378285087928816e-08
+2025-06-05 17:10:31,261 - train - INFO - sensitivity_w4a3:2.7926846613013367e-08
+2025-06-05 17:10:31,266 - train - INFO - sensitivity_w4a4:2.3549228345132178e-08
+2025-06-05 17:10:31,270 - train - INFO - sensitivity_w5a2:7.75409816355932e-08
+2025-06-05 17:10:31,274 - train - INFO - sensitivity_w5a3:2.192617287732901e-08
+2025-06-05 17:10:31,278 - train - INFO - sensitivity_w5a4:1.7718903677632625e-08
+2025-06-05 17:10:31,283 - train - INFO - sensitivity_w6a2:7.517879652141346e-08
+2025-06-05 17:10:31,287 - train - INFO - sensitivity_w6a3:1.9583854538041123e-08
+2025-06-05 17:10:31,291 - train - INFO - sensitivity_w6a4:1.541479122124656e-08
+2025-06-05 17:10:31,295 - train - INFO - sensitivity_w7a2:7.456213779732934e-08
+2025-06-05 17:10:31,300 - train - INFO - sensitivity_w7a3:1.8831222803328274e-08
+2025-06-05 17:10:31,304 - train - INFO - sensitivity_w7a4:1.4705680229099016e-08
+2025-06-05 17:10:31,308 - train - INFO - sensitivity_w8a2:7.429835591210576e-08
+2025-06-05 17:10:31,313 - train - INFO - sensitivity_w8a3:1.8565510018220266e-08
+2025-06-05 17:10:31,317 - train - INFO - sensitivity_w8a4:1.4480517229742418e-08
+2025-06-05 17:10:31,322 - train - INFO - latency_accumulation_b6:404.8500061035156
+2025-06-05 17:10:31,327 - train - INFO - latency_accumulation_b7:404.8500061035156
+2025-06-05 17:10:31,332 - train - INFO - latency_accumulation_b8:404.8500061035156
+2025-06-05 17:10:31,337 - train - INFO - latency_accumulation_b9:404.8500061035156
+2025-06-05 17:10:31,342 - train - INFO - latency_accumulation_b10:404.8500061035156
+2025-06-05 17:10:31,347 - train - INFO - latency_accumulation_b11:404.8500061035156
+2025-06-05 17:10:31,352 - train - INFO - latency_accumulation_b12:404.8500061035156
+2025-06-05 17:10:31,356 - train - INFO - latency_accumulation_b13:404.8500061035156
+2025-06-05 17:10:31,362 - train - INFO - latency_accumulation_b14:404.8500061035156
+2025-06-05 17:10:31,366 - train - INFO - latency_accumulation_b15:404.8500061035156
+2025-06-05 17:10:31,371 - train - INFO - latency_accumulation_b16:404850016256.0
+2025-06-05 17:10:31,378 - train - INFO - latency_accumulation_b17:404850016256.0
+2025-06-05 17:10:31,383 - train - INFO - latency_accumulation_b18:404850016256.0
+2025-06-05 17:10:31,388 - train - INFO - latency_accumulation_b19:404850016256.0
+2025-06-05 17:10:31,393 - train - INFO - latency_accumulation_b20:404850016256.0
+2025-06-05 17:10:31,398 - train - INFO - latency_accumulation_b21:404850016256.0
+2025-06-05 17:10:31,403 - train - INFO - latency_accumulation_b22:404850016256.0
+2025-06-05 17:10:31,408 - train - INFO - latency_accumulation_b23:404850016256.0
+2025-06-05 17:10:31,413 - train - INFO - latency_accumulation_b24:404850016256.0
+2025-06-05 17:10:31,418 - train - INFO - latency_accumulation_b25:404850016256.0
+2025-06-05 17:10:31,423 - train - INFO - latency_accumulation_b26:404850016256.0
+2025-06-05 17:10:31,432 - train - INFO - sensitivity_w2a2:8.649718807873796e-08
+2025-06-05 17:10:31,436 - train - INFO - sensitivity_w2a3:7.429477477671753e-08
+2025-06-05 17:10:31,441 - train - INFO - sensitivity_w2a4:5.7200942649160424e-08
+2025-06-05 17:10:31,445 - train - INFO - sensitivity_w3a2:5.073412978617853e-08
+2025-06-05 17:10:31,449 - train - INFO - sensitivity_w3a3:3.857891783809464e-08
+2025-06-05 17:10:31,453 - train - INFO - sensitivity_w3a4:2.0709052250822424e-08
+2025-06-05 17:10:31,458 - train - INFO - sensitivity_w4a2:3.860886010897957e-08
+2025-06-05 17:10:31,462 - train - INFO - sensitivity_w4a3:2.6668075747693365e-08
+2025-06-05 17:10:31,466 - train - INFO - sensitivity_w4a4:9.86236337041646e-09
+2025-06-05 17:10:31,471 - train - INFO - sensitivity_w5a2:3.3839555158010626e-08
+2025-06-05 17:10:31,475 - train - INFO - sensitivity_w5a3:2.2033642466112724e-08
+2025-06-05 17:10:31,479 - train - INFO - sensitivity_w5a4:5.362122745822262e-09
+2025-06-05 17:10:31,483 - train - INFO - sensitivity_w6a2:3.2056682641723455e-08
+2025-06-05 17:10:31,488 - train - INFO - sensitivity_w6a3:2.030919077355975e-08
+2025-06-05 17:10:31,492 - train - INFO - sensitivity_w6a4:3.698766848359014e-09
+2025-06-05 17:10:31,496 - train - INFO - sensitivity_w7a2:3.1480130502359316e-08
+2025-06-05 17:10:31,500 - train - INFO - sensitivity_w7a3:1.9689027297431494e-08
+2025-06-05 17:10:31,505 - train - INFO - sensitivity_w7a4:3.076614074615236e-09
+2025-06-05 17:10:31,509 - train - INFO - sensitivity_w8a2:3.129193260065222e-08
+2025-06-05 17:10:31,513 - train - INFO - sensitivity_w8a3:1.951823058732316e-08
+2025-06-05 17:10:31,518 - train - INFO - sensitivity_w8a4:2.892915240693128e-09
+2025-06-05 17:10:31,523 - train - INFO - latency_accumulation_b6:404.8500061035156
+2025-06-05 17:10:31,528 - train - INFO - latency_accumulation_b7:404.8500061035156
+2025-06-05 17:10:31,533 - train - INFO - latency_accumulation_b8:404.8500061035156
+2025-06-05 17:10:31,538 - train - INFO - latency_accumulation_b9:404.8500061035156
+2025-06-05 17:10:31,543 - train - INFO - latency_accumulation_b10:404.8500061035156
+2025-06-05 17:10:31,548 - train - INFO - latency_accumulation_b11:404.8500061035156
+2025-06-05 17:10:31,553 - train - INFO - latency_accumulation_b12:404.8500061035156
+2025-06-05 17:10:31,558 - train - INFO - latency_accumulation_b13:404.8500061035156
+2025-06-05 17:10:31,563 - train - INFO - latency_accumulation_b14:404.8500061035156
+2025-06-05 17:10:31,568 - train - INFO - latency_accumulation_b15:404.8500061035156
+2025-06-05 17:10:31,573 - train - INFO - latency_accumulation_b16:404850016256.0
+2025-06-05 17:10:31,578 - train - INFO - latency_accumulation_b17:404850016256.0
+2025-06-05 17:10:31,583 - train - INFO - latency_accumulation_b18:404850016256.0
+2025-06-05 17:10:31,588 - train - INFO - latency_accumulation_b19:404850016256.0
+2025-06-05 17:10:31,593 - train - INFO - latency_accumulation_b20:404850016256.0
+2025-06-05 17:10:31,598 - train - INFO - latency_accumulation_b21:404850016256.0
+2025-06-05 17:10:31,604 - train - INFO - latency_accumulation_b22:404850016256.0
+2025-06-05 17:10:31,609 - train - INFO - latency_accumulation_b23:404850016256.0
+2025-06-05 17:10:31,614 - train - INFO - latency_accumulation_b24:404850016256.0
+2025-06-05 17:10:31,619 - train - INFO - latency_accumulation_b25:404850016256.0
+2025-06-05 17:10:31,624 - train - INFO - latency_accumulation_b26:404850016256.0
+2025-06-05 17:10:31,633 - train - INFO - sensitivity_w2a2:9.915818566241796e-08
+2025-06-05 17:10:31,637 - train - INFO - sensitivity_w2a3:8.985720256760032e-08
+2025-06-05 17:10:31,642 - train - INFO - sensitivity_w2a4:5.473129505162433e-08
+2025-06-05 17:10:31,646 - train - INFO - sensitivity_w3a2:7.295385273664579e-08
+2025-06-05 17:10:31,650 - train - INFO - sensitivity_w3a3:6.419329423579256e-08
+2025-06-05 17:10:31,654 - train - INFO - sensitivity_w3a4:2.968524626112412e-08
+2025-06-05 17:10:31,659 - train - INFO - sensitivity_w4a2:6.511758954275138e-08
+2025-06-05 17:10:31,663 - train - INFO - sensitivity_w4a3:5.665372526664214e-08
+2025-06-05 17:10:31,667 - train - INFO - sensitivity_w4a4:2.232947693414644e-08
+2025-06-05 17:10:31,672 - train - INFO - sensitivity_w5a2:6.174374789225112e-08
+2025-06-05 17:10:31,676 - train - INFO - sensitivity_w5a3:5.318818452337837e-08
+2025-06-05 17:10:31,680 - train - INFO - sensitivity_w5a4:1.8886909813886632e-08
+2025-06-05 17:10:31,684 - train - INFO - sensitivity_w6a2:6.030433041814831e-08
+2025-06-05 17:10:31,689 - train - INFO - sensitivity_w6a3:5.168053718307419e-08
+2025-06-05 17:10:31,693 - train - INFO - sensitivity_w6a4:1.75282384162756e-08
+2025-06-05 17:10:31,697 - train - INFO - sensitivity_w7a2:5.983488193805897e-08
+2025-06-05 17:10:31,701 - train - INFO - sensitivity_w7a3:5.1215081953159824e-08
+2025-06-05 17:10:31,706 - train - INFO - sensitivity_w7a4:1.7140486363587115e-08
+2025-06-05 17:10:31,710 - train - INFO - sensitivity_w8a2:5.955454440709218e-08
+2025-06-05 17:10:31,714 - train - INFO - sensitivity_w8a3:5.0954227504007576e-08
+2025-06-05 17:10:31,719 - train - INFO - sensitivity_w8a4:1.691397777392467e-08
+2025-06-05 17:10:31,724 - train - INFO - latency_accumulation_b6:404.8500061035156
+2025-06-05 17:10:31,729 - train - INFO - latency_accumulation_b7:404.8500061035156
+2025-06-05 17:10:31,734 - train - INFO - latency_accumulation_b8:404.8500061035156
+2025-06-05 17:10:31,739 - train - INFO - latency_accumulation_b9:404.8500061035156
+2025-06-05 17:10:31,744 - train - INFO - latency_accumulation_b10:404.8500061035156
+2025-06-05 17:10:31,749 - train - INFO - latency_accumulation_b11:404.8500061035156
+2025-06-05 17:10:31,754 - train - INFO - latency_accumulation_b12:404.8500061035156
+2025-06-05 17:10:31,759 - train - INFO - latency_accumulation_b13:404.8500061035156
+2025-06-05 17:10:31,764 - train - INFO - latency_accumulation_b14:404.8500061035156
+2025-06-05 17:10:31,769 - train - INFO - latency_accumulation_b15:404.8500061035156
+2025-06-05 17:10:31,774 - train - INFO - latency_accumulation_b16:404850016256.0
+2025-06-05 17:10:31,779 - train - INFO - latency_accumulation_b17:404850016256.0
+2025-06-05 17:10:31,784 - train - INFO - latency_accumulation_b18:404850016256.0
+2025-06-05 17:10:31,789 - train - INFO - latency_accumulation_b19:404850016256.0
+2025-06-05 17:10:31,794 - train - INFO - latency_accumulation_b20:404850016256.0
+2025-06-05 17:10:31,799 - train - INFO - latency_accumulation_b21:404850016256.0
+2025-06-05 17:10:31,804 - train - INFO - latency_accumulation_b22:404850016256.0
+2025-06-05 17:10:31,809 - train - INFO - latency_accumulation_b23:404850016256.0
+2025-06-05 17:10:31,814 - train - INFO - latency_accumulation_b24:404850016256.0
+2025-06-05 17:10:31,819 - train - INFO - latency_accumulation_b25:404850016256.0
+2025-06-05 17:10:31,824 - train - INFO - latency_accumulation_b26:404850016256.0
+2025-06-05 17:10:31,833 - train - INFO - sensitivity_w2a2:1.4284219673754706e-07
+2025-06-05 17:10:31,836 - train - INFO - sensitivity_w2a3:1.2240865032708825e-07
+2025-06-05 17:10:31,840 - train - INFO - sensitivity_w2a4:6.625448634167697e-08
+2025-06-05 17:10:31,843 - train - INFO - sensitivity_w3a2:1.0384606952129616e-07
+2025-06-05 17:10:31,847 - train - INFO - sensitivity_w3a3:8.333221046541439e-08
+2025-06-05 17:10:31,850 - train - INFO - sensitivity_w3a4:2.602442350507772e-08
+2025-06-05 17:10:31,854 - train - INFO - sensitivity_w4a2:9.413567170213355e-08
+2025-06-05 17:10:31,857 - train - INFO - sensitivity_w4a3:7.431254545053889e-08
+2025-06-05 17:10:31,861 - train - INFO - sensitivity_w4a4:1.68989071624992e-08
+2025-06-05 17:10:31,864 - train - INFO - sensitivity_w5a2:8.93983269634191e-08
+2025-06-05 17:10:31,868 - train - INFO - sensitivity_w5a3:6.974343591537036e-08
+2025-06-05 17:10:31,871 - train - INFO - sensitivity_w5a4:1.30267849840493e-08
+2025-06-05 17:10:31,875 - train - INFO - sensitivity_w6a2:8.83075159663349e-08
+2025-06-05 17:10:31,878 - train - INFO - sensitivity_w6a3:6.885343850626668e-08
+2025-06-05 17:10:31,882 - train - INFO - sensitivity_w6a4:1.2023157580642874e-08
+2025-06-05 17:10:31,885 - train - INFO - sensitivity_w7a2:8.80026291838476e-08
+2025-06-05 17:10:31,889 - train - INFO - sensitivity_w7a3:6.846421740647202e-08
+2025-06-05 17:10:31,892 - train - INFO - sensitivity_w7a4:1.1515027154018753e-08
+2025-06-05 17:10:31,896 - train - INFO - sensitivity_w8a2:8.789402272668667e-08
+2025-06-05 17:10:31,899 - train - INFO - sensitivity_w8a3:6.837615273980191e-08
+2025-06-05 17:10:31,903 - train - INFO - sensitivity_w8a4:1.1318007864247193e-08
+2025-06-05 17:10:31,908 - train - INFO - latency_accumulation_b6:656.9600219726562
+2025-06-05 17:10:31,913 - train - INFO - latency_accumulation_b7:656.9600219726562
+2025-06-05 17:10:31,918 - train - INFO - latency_accumulation_b8:656.9600219726562
+2025-06-05 17:10:31,923 - train - INFO - latency_accumulation_b9:656.9600219726562
+2025-06-05 17:10:31,928 - train - INFO - latency_accumulation_b10:656.9600219726562
+2025-06-05 17:10:31,933 - train - INFO - latency_accumulation_b11:656.9600219726562
+2025-06-05 17:10:31,938 - train - INFO - latency_accumulation_b12:656.9600219726562
+2025-06-05 17:10:31,943 - train - INFO - latency_accumulation_b13:656.9600219726562
+2025-06-05 17:10:31,948 - train - INFO - latency_accumulation_b14:656.9600219726562
+2025-06-05 17:10:31,953 - train - INFO - latency_accumulation_b15:656.9600219726562
+2025-06-05 17:10:31,958 - train - INFO - latency_accumulation_b16:656959995904.0
+2025-06-05 17:10:31,963 - train - INFO - latency_accumulation_b17:656959995904.0
+2025-06-05 17:10:31,968 - train - INFO - latency_accumulation_b18:656959995904.0
+2025-06-05 17:10:31,973 - train - INFO - latency_accumulation_b19:656959995904.0
+2025-06-05 17:10:31,978 - train - INFO - latency_accumulation_b20:656959995904.0
+2025-06-05 17:10:31,983 - train - INFO - latency_accumulation_b21:656959995904.0
+2025-06-05 17:10:31,988 - train - INFO - latency_accumulation_b22:656959995904.0
+2025-06-05 17:10:31,993 - train - INFO - latency_accumulation_b23:656959995904.0
+2025-06-05 17:10:31,998 - train - INFO - latency_accumulation_b24:656959995904.0
+2025-06-05 17:10:32,003 - train - INFO - latency_accumulation_b25:656959995904.0
+2025-06-05 17:10:32,008 - train - INFO - latency_accumulation_b26:656959995904.0
+2025-06-05 17:10:32,033 - train - INFO - sensitivity_w2a2:2.817448603309458e-07
+2025-06-05 17:10:32,036 - train - INFO - sensitivity_w2a3:2.1755059265160526e-07
+2025-06-05 17:10:32,040 - train - INFO - sensitivity_w2a4:2.1393690019522182e-07
+2025-06-05 17:10:32,043 - train - INFO - sensitivity_w3a2:1.535806717356536e-07
+2025-06-05 17:10:32,046 - train - INFO - sensitivity_w3a3:1.0039781983550711e-07
+2025-06-05 17:10:32,049 - train - INFO - sensitivity_w3a4:9.554076996209915e-08
+2025-06-05 17:10:32,052 - train - INFO - sensitivity_w4a2:1.2886165734471433e-07
+2025-06-05 17:10:32,055 - train - INFO - sensitivity_w4a3:7.78699842385322e-08
+2025-06-05 17:10:32,058 - train - INFO - sensitivity_w4a4:7.274893221165257e-08
+2025-06-05 17:10:32,061 - train - INFO - sensitivity_w5a2:1.2448109032447974e-07
+2025-06-05 17:10:32,064 - train - INFO - sensitivity_w5a3:7.317103722925822e-08
+2025-06-05 17:10:32,067 - train - INFO - sensitivity_w5a4:6.815201913923374e-08
+2025-06-05 17:10:32,070 - train - INFO - sensitivity_w6a2:1.213214204653923e-07
+2025-06-05 17:10:32,073 - train - INFO - sensitivity_w6a3:7.057833784074319e-08
+2025-06-05 17:10:32,076 - train - INFO - sensitivity_w6a4:6.536882324326143e-08
+2025-06-05 17:10:32,080 - train - INFO - sensitivity_w7a2:1.2060110066158813e-07
+2025-06-05 17:10:32,083 - train - INFO - sensitivity_w7a3:7.00054130220451e-08
+2025-06-05 17:10:32,086 - train - INFO - sensitivity_w7a4:6.480112801909854e-08
+2025-06-05 17:10:32,089 - train - INFO - sensitivity_w8a2:1.2015037498258607e-07
+2025-06-05 17:10:32,092 - train - INFO - sensitivity_w8a3:6.927795936917391e-08
+2025-06-05 17:10:32,095 - train - INFO - sensitivity_w8a4:6.418881781655728e-08
+2025-06-05 17:10:32,117 - train - INFO - latency_accumulation_b6:493.00311279296875
+2025-06-05 17:10:32,138 - train - INFO - latency_accumulation_b7:493.00311279296875
+2025-06-05 17:10:32,160 - train - INFO - latency_accumulation_b8:493.00311279296875
+2025-06-05 17:10:32,182 - train - INFO - latency_accumulation_b9:493.00311279296875
+2025-06-05 17:10:32,204 - train - INFO - latency_accumulation_b10:493.00311279296875
+2025-06-05 17:10:32,225 - train - INFO - latency_accumulation_b11:493.00311279296875
+2025-06-05 17:10:32,249 - train - INFO - latency_accumulation_b12:493.00311279296875
+2025-06-05 17:10:32,270 - train - INFO - latency_accumulation_b13:493.0031433105469
+2025-06-05 17:10:32,292 - train - INFO - latency_accumulation_b14:493.0031433105469
+2025-06-05 17:10:32,313 - train - INFO - latency_accumulation_b15:493.0031433105469
+2025-06-05 17:10:32,335 - train - INFO - latency_accumulation_b16:493003112448.0
+2025-06-05 17:10:32,357 - train - INFO - latency_accumulation_b17:493003112448.0
+2025-06-05 17:10:32,378 - train - INFO - latency_accumulation_b18:493003112448.0
+2025-06-05 17:10:32,400 - train - INFO - latency_accumulation_b19:493003112448.0
+2025-06-05 17:10:32,421 - train - INFO - latency_accumulation_b20:493003112448.0
+2025-06-05 17:10:32,443 - train - INFO - latency_accumulation_b21:493003112448.0
+2025-06-05 17:10:32,465 - train - INFO - latency_accumulation_b22:493003112448.0
+2025-06-05 17:10:32,486 - train - INFO - latency_accumulation_b23:493003112448.0
+2025-06-05 17:10:32,508 - train - INFO - latency_accumulation_b24:493003112448.0
+2025-06-05 17:10:32,529 - train - INFO - latency_accumulation_b25:493003112448.0
+2025-06-05 17:10:32,551 - train - INFO - latency_accumulation_b26:493003112448.0
+2025-06-05 17:10:32,576 - train - INFO - sensitivity_w2a2:1.519842101060931e-07
+2025-06-05 17:10:32,579 - train - INFO - sensitivity_w2a3:1.3824089251102123e-07
+2025-06-05 17:10:32,582 - train - INFO - sensitivity_w2a4:8.849943355926371e-08
+2025-06-05 17:10:32,585 - train - INFO - sensitivity_w3a2:8.760807901353473e-08
+2025-06-05 17:10:32,589 - train - INFO - sensitivity_w3a3:7.678728763949039e-08
+2025-06-05 17:10:32,592 - train - INFO - sensitivity_w3a4:3.550435678789654e-08
+2025-06-05 17:10:32,595 - train - INFO - sensitivity_w4a2:7.451090766608104e-08
+2025-06-05 17:10:32,598 - train - INFO - sensitivity_w4a3:6.416811970666458e-08
+2025-06-05 17:10:32,601 - train - INFO - sensitivity_w4a4:2.311777791419445e-08
+2025-06-05 17:10:32,604 - train - INFO - sensitivity_w5a2:7.26305131593108e-08
+2025-06-05 17:10:32,607 - train - INFO - sensitivity_w5a3:6.238905569944109e-08
+2025-06-05 17:10:32,610 - train - INFO - sensitivity_w5a4:2.1438369302018145e-08
+2025-06-05 17:10:32,613 - train - INFO - sensitivity_w6a2:7.109463240340119e-08
+2025-06-05 17:10:32,616 - train - INFO - sensitivity_w6a3:6.079625336496974e-08
+2025-06-05 17:10:32,619 - train - INFO - sensitivity_w6a4:2.0010414658599984e-08
+2025-06-05 17:10:32,622 - train - INFO - sensitivity_w7a2:7.083207265168312e-08
+2025-06-05 17:10:32,625 - train - INFO - sensitivity_w7a3:6.053943479855661e-08
+2025-06-05 17:10:32,629 - train - INFO - sensitivity_w7a4:1.9702154574474662e-08
+2025-06-05 17:10:32,632 - train - INFO - sensitivity_w8a2:7.056594597543153e-08
+2025-06-05 17:10:32,635 - train - INFO - sensitivity_w8a3:6.027644161576973e-08
+2025-06-05 17:10:32,638 - train - INFO - sensitivity_w8a4:1.9431308118100787e-08
+2025-06-05 17:10:32,660 - train - INFO - latency_accumulation_b6:493.00311279296875
+2025-06-05 17:10:32,682 - train - INFO - latency_accumulation_b7:493.00311279296875
+2025-06-05 17:10:32,703 - train - INFO - latency_accumulation_b8:493.00311279296875
+2025-06-05 17:10:32,725 - train - INFO - latency_accumulation_b9:493.00311279296875
+2025-06-05 17:10:32,746 - train - INFO - latency_accumulation_b10:493.00311279296875
+2025-06-05 17:10:32,768 - train - INFO - latency_accumulation_b11:493.00311279296875
+2025-06-05 17:10:32,790 - train - INFO - latency_accumulation_b12:493.00311279296875
+2025-06-05 17:10:32,811 - train - INFO - latency_accumulation_b13:493.0031433105469
+2025-06-05 17:10:32,833 - train - INFO - latency_accumulation_b14:493.0031433105469
+2025-06-05 17:10:32,854 - train - INFO - latency_accumulation_b15:493.0031433105469
+2025-06-05 17:10:32,875 - train - INFO - latency_accumulation_b16:493003112448.0
+2025-06-05 17:10:32,897 - train - INFO - latency_accumulation_b17:493003112448.0
+2025-06-05 17:10:32,919 - train - INFO - latency_accumulation_b18:493003112448.0
+2025-06-05 17:10:32,941 - train - INFO - latency_accumulation_b19:493003112448.0
+2025-06-05 17:10:32,962 - train - INFO - latency_accumulation_b20:493003112448.0
+2025-06-05 17:10:32,984 - train - INFO - latency_accumulation_b21:493003112448.0
+2025-06-05 17:10:33,005 - train - INFO - latency_accumulation_b22:493003112448.0
+2025-06-05 17:10:33,027 - train - INFO - latency_accumulation_b23:493003112448.0
+2025-06-05 17:10:33,048 - train - INFO - latency_accumulation_b24:493003112448.0
+2025-06-05 17:10:33,070 - train - INFO - latency_accumulation_b25:493003112448.0
+2025-06-05 17:10:33,094 - train - INFO - latency_accumulation_b26:493003112448.0
+2025-06-05 17:10:33,120 - train - INFO - sensitivity_w2a2:4.135303299790394e-08
+2025-06-05 17:10:33,123 - train - INFO - sensitivity_w2a3:3.847134166790056e-08
+2025-06-05 17:10:33,126 - train - INFO - sensitivity_w2a4:1.574026953221619e-08
+2025-06-05 17:10:33,129 - train - INFO - sensitivity_w3a2:3.191860997731055e-08
+2025-06-05 17:10:33,132 - train - INFO - sensitivity_w3a3:2.5495362265814947e-08
+2025-06-05 17:10:33,135 - train - INFO - sensitivity_w3a4:6.864778079318512e-09
+2025-06-05 17:10:33,138 - train - INFO - sensitivity_w4a2:2.7132115221206732e-08
+2025-06-05 17:10:33,141 - train - INFO - sensitivity_w4a3:2.1993802334918655e-08
+2025-06-05 17:10:33,144 - train - INFO - sensitivity_w4a4:4.656952601322928e-09
+2025-06-05 17:10:33,147 - train - INFO - sensitivity_w5a2:2.699244205928153e-08
+2025-06-05 17:10:33,150 - train - INFO - sensitivity_w5a3:2.167156587518093e-08
+2025-06-05 17:10:33,154 - train - INFO - sensitivity_w5a4:3.7989025258866604e-09
+2025-06-05 17:10:33,157 - train - INFO - sensitivity_w6a2:2.6942940323237963e-08
+2025-06-05 17:10:33,160 - train - INFO - sensitivity_w6a3:2.157527845270124e-08
+2025-06-05 17:10:33,163 - train - INFO - sensitivity_w6a4:3.7237111172316872e-09
+2025-06-05 17:10:33,166 - train - INFO - sensitivity_w7a2:2.6683796505722057e-08
+2025-06-05 17:10:33,169 - train - INFO - sensitivity_w7a3:2.1328427024513985e-08
+2025-06-05 17:10:33,172 - train - INFO - sensitivity_w7a4:3.4987275299158682e-09
+2025-06-05 17:10:33,175 - train - INFO - sensitivity_w8a2:2.660598497072897e-08
+2025-06-05 17:10:33,178 - train - INFO - sensitivity_w8a3:2.1285455176212054e-08
+2025-06-05 17:10:33,181 - train - INFO - sensitivity_w8a4:3.472966358941676e-09
+2025-06-05 17:10:33,203 - train - INFO - latency_accumulation_b6:493.00311279296875
+2025-06-05 17:10:33,224 - train - INFO - latency_accumulation_b7:493.00311279296875
+2025-06-05 17:10:33,246 - train - INFO - latency_accumulation_b8:493.00311279296875
+2025-06-05 17:10:33,267 - train - INFO - latency_accumulation_b9:493.00311279296875
+2025-06-05 17:10:33,289 - train - INFO - latency_accumulation_b10:493.00311279296875
+2025-06-05 17:10:33,311 - train - INFO - latency_accumulation_b11:493.00311279296875
+2025-06-05 17:10:33,332 - train - INFO - latency_accumulation_b12:493.00311279296875
+2025-06-05 17:10:33,354 - train - INFO - latency_accumulation_b13:493.0031433105469
+2025-06-05 17:10:33,376 - train - INFO - latency_accumulation_b14:493.0031433105469
+2025-06-05 17:10:33,397 - train - INFO - latency_accumulation_b15:493.0031433105469
+2025-06-05 17:10:33,419 - train - INFO - latency_accumulation_b16:493003112448.0
+2025-06-05 17:10:33,441 - train - INFO - latency_accumulation_b17:493003112448.0
+2025-06-05 17:10:33,463 - train - INFO - latency_accumulation_b18:493003112448.0
+2025-06-05 17:10:33,485 - train - INFO - latency_accumulation_b19:493003112448.0
+2025-06-05 17:10:33,506 - train - INFO - latency_accumulation_b20:493003112448.0
+2025-06-05 17:10:33,528 - train - INFO - latency_accumulation_b21:493003112448.0
+2025-06-05 17:10:33,549 - train - INFO - latency_accumulation_b22:493003112448.0
+2025-06-05 17:10:33,571 - train - INFO - latency_accumulation_b23:493003112448.0
+2025-06-05 17:10:33,593 - train - INFO - latency_accumulation_b24:493003112448.0
+2025-06-05 17:10:33,615 - train - INFO - latency_accumulation_b25:493003112448.0
+2025-06-05 17:10:33,636 - train - INFO - latency_accumulation_b26:493003112448.0
+2025-06-05 17:10:33,636 - train - INFO - origin_latency:7170.479583740234
+2025-06-05 17:10:33,636 - train - INFO - cir_idx:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+2025-06-05 17:10:33,928 - train - INFO - 16
+2025-06-05 17:10:33,928 - train - INFO - target: w4a4
+2025-06-05 17:10:33,928 - train - INFO - bw_result:[7, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 5, 5, 5]
+2025-06-05 17:10:33,928 - train - INFO - ba_result:[4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+2025-06-05 17:10:33,928 - train - INFO - acc_result:[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+2025-06-05 17:11:08,291 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-05 17:11:08,291 - train - INFO - Get QAT model...
+2025-06-05 17:11:08,432 - train - INFO - current_bacc:[14, 14, 14, 14, 14, 15, 15, 14, 15, 14, 13, 13, 13, 14, 14, 14]
+2025-06-05 17:11:09,178 - train - INFO - mse: 0.0
+2025-06-05 17:11:09,249 - train - INFO - AMP not enabled. Training in float32.
+2025-06-05 17:11:09,250 - train - INFO - Scheduled epochs: 60
+2025-06-05 17:11:15,827 - train - INFO - Verifying initial model in training dataset
+2025-06-05 17:11:21,792 - train - INFO - batch_idx:0
+2025-06-05 17:12:11,118 - train - INFO - batch_idx:50
+2025-06-05 17:13:03,210 - train - INFO - batch_idx:100
+2025-06-05 17:13:55,689 - train - INFO - batch_idx:150
+2025-06-05 17:14:48,488 - train - INFO - batch_idx:200
+2025-06-05 17:15:40,887 - train - INFO - batch_idx:250
+2025-06-05 17:16:32,706 - train - INFO - batch_idx:300
+2025-06-05 17:17:24,975 - train - INFO - batch_idx:350
+2025-06-05 17:18:17,783 - train - INFO - batch_idx:400
+2025-06-05 17:19:10,284 - train - INFO - batch_idx:450
+2025-06-05 17:20:02,306 - train - INFO - batch_idx:500
+2025-06-05 17:20:02,573 - train - INFO - len loader.dataset:500
+2025-06-05 17:20:08,454 - train - INFO - target_block_size:4
+2025-06-05 17:20:08,470 - train - INFO - sensitivity_w2a2:0.00028805999318137765
+2025-06-05 17:20:08,483 - train - INFO - sensitivity_w2a3:0.00023136771051213145
+2025-06-05 17:20:08,496 - train - INFO - sensitivity_w2a4:0.000281898130197078
+2025-06-05 17:20:08,509 - train - INFO - sensitivity_w3a2:0.0002566551847849041
+2025-06-05 17:20:08,522 - train - INFO - sensitivity_w3a3:0.00019884394714608788
+2025-06-05 17:20:08,535 - train - INFO - sensitivity_w3a4:0.00015978817827999592
+2025-06-05 17:20:08,549 - train - INFO - sensitivity_w4a2:0.00023972139752004296
+2025-06-05 17:20:08,562 - train - INFO - sensitivity_w4a3:0.00017817446496337652
+2025-06-05 17:20:08,575 - train - INFO - sensitivity_w4a4:0.00011319500481477007
+2025-06-05 17:20:08,588 - train - INFO - sensitivity_w5a2:0.0002120768476743251
+2025-06-05 17:20:08,601 - train - INFO - sensitivity_w5a3:0.00016366911586374044
+2025-06-05 17:20:08,614 - train - INFO - sensitivity_w5a4:9.981026232708246e-05
+2025-06-05 17:20:08,627 - train - INFO - sensitivity_w6a2:0.00021585452486760914
+2025-06-05 17:20:08,640 - train - INFO - sensitivity_w6a3:0.00015484911273233593
+2025-06-05 17:20:08,653 - train - INFO - sensitivity_w6a4:8.295098086819053e-05
+2025-06-05 17:20:08,666 - train - INFO - sensitivity_w7a2:0.0002138199342880398
+2025-06-05 17:20:08,679 - train - INFO - sensitivity_w7a3:0.00015433350927196443
+2025-06-05 17:20:08,693 - train - INFO - sensitivity_w7a4:8.075580990407616e-05
+2025-06-05 17:20:08,706 - train - INFO - sensitivity_w8a2:0.00021006891620345414
+2025-06-05 17:20:08,719 - train - INFO - sensitivity_w8a3:0.00015040220750961453
+2025-06-05 17:20:08,732 - train - INFO - sensitivity_w8a4:7.769709918648005e-05
+2025-06-05 17:20:08,732 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:20:08,733 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:20:08,733 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:20:08,733 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:20:08,734 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:20:08,734 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:20:08,734 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:20:08,735 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:20:08,735 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:20:08,735 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:20:08,736 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:20:08,736 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:20:08,736 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:20:08,737 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:20:08,737 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:20:08,738 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:20:08,738 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:20:08,738 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:20:08,739 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:20:08,739 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:20:08,739 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:20:08,753 - train - INFO - sensitivity_w2a2:5.2502116886898875e-05
+2025-06-05 17:20:08,766 - train - INFO - sensitivity_w2a3:4.194497887510806e-05
+2025-06-05 17:20:08,779 - train - INFO - sensitivity_w2a4:3.8065882108639926e-05
+2025-06-05 17:20:08,792 - train - INFO - sensitivity_w3a2:3.272629692219198e-05
+2025-06-05 17:20:08,805 - train - INFO - sensitivity_w3a3:2.1952593669993803e-05
+2025-06-05 17:20:08,818 - train - INFO - sensitivity_w3a4:1.5611851267749444e-05
+2025-06-05 17:20:08,831 - train - INFO - sensitivity_w4a2:2.712677996896673e-05
+2025-06-05 17:20:08,845 - train - INFO - sensitivity_w4a3:1.6942711226874962e-05
+2025-06-05 17:20:08,858 - train - INFO - sensitivity_w4a4:1.007638275041245e-05
+2025-06-05 17:20:08,871 - train - INFO - sensitivity_w5a2:2.444280471536331e-05
+2025-06-05 17:20:08,884 - train - INFO - sensitivity_w5a3:1.3800064152746927e-05
+2025-06-05 17:20:08,897 - train - INFO - sensitivity_w5a4:6.939307240827475e-06
+2025-06-05 17:20:08,910 - train - INFO - sensitivity_w6a2:2.3495946152252145e-05
+2025-06-05 17:20:08,923 - train - INFO - sensitivity_w6a3:1.278139006899437e-05
+2025-06-05 17:20:08,936 - train - INFO - sensitivity_w6a4:5.870696440979373e-06
+2025-06-05 17:20:08,949 - train - INFO - sensitivity_w7a2:2.301317363162525e-05
+2025-06-05 17:20:08,963 - train - INFO - sensitivity_w7a3:1.2263805729162414e-05
+2025-06-05 17:20:08,976 - train - INFO - sensitivity_w7a4:5.404162948252633e-06
+2025-06-05 17:20:08,989 - train - INFO - sensitivity_w8a2:2.268712160002906e-05
+2025-06-05 17:20:09,002 - train - INFO - sensitivity_w8a3:1.1973370419582352e-05
+2025-06-05 17:20:09,015 - train - INFO - sensitivity_w8a4:4.94351661473047e-06
+2025-06-05 17:20:09,015 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:20:09,016 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:20:09,016 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:20:09,017 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:20:09,017 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:20:09,017 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:20:09,018 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:20:09,018 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:20:09,018 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:20:09,019 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:20:09,019 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:20:09,019 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:20:09,020 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:20:09,020 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:20:09,020 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:20:09,021 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:20:09,021 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:20:09,021 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:20:09,022 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:20:09,022 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:20:09,022 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:20:09,036 - train - INFO - sensitivity_w2a2:7.045752136036754e-05
+2025-06-05 17:20:09,049 - train - INFO - sensitivity_w2a3:7.039115007501096e-05
+2025-06-05 17:20:09,062 - train - INFO - sensitivity_w2a4:5.476714432006702e-05
+2025-06-05 17:20:09,075 - train - INFO - sensitivity_w3a2:5.255153519101441e-05
+2025-06-05 17:20:09,088 - train - INFO - sensitivity_w3a3:4.809304664377123e-05
+2025-06-05 17:20:09,101 - train - INFO - sensitivity_w3a4:2.8996790206292644e-05
+2025-06-05 17:20:09,115 - train - INFO - sensitivity_w4a2:4.636416269931942e-05
+2025-06-05 17:20:09,128 - train - INFO - sensitivity_w4a3:3.8935108022997156e-05
+2025-06-05 17:20:09,141 - train - INFO - sensitivity_w4a4:1.9967748812632635e-05
+2025-06-05 17:20:09,154 - train - INFO - sensitivity_w5a2:4.427678868523799e-05
+2025-06-05 17:20:09,167 - train - INFO - sensitivity_w5a3:3.610142812249251e-05
+2025-06-05 17:20:09,180 - train - INFO - sensitivity_w5a4:1.7312082491116598e-05
+2025-06-05 17:20:09,193 - train - INFO - sensitivity_w6a2:4.381547842058353e-05
+2025-06-05 17:20:09,206 - train - INFO - sensitivity_w6a3:3.544881474226713e-05
+2025-06-05 17:20:09,219 - train - INFO - sensitivity_w6a4:1.5441322830156423e-05
+2025-06-05 17:20:09,232 - train - INFO - sensitivity_w7a2:4.383994382806122e-05
+2025-06-05 17:20:09,245 - train - INFO - sensitivity_w7a3:3.546032530721277e-05
+2025-06-05 17:20:09,258 - train - INFO - sensitivity_w7a4:1.4951327102608047e-05
+2025-06-05 17:20:09,271 - train - INFO - sensitivity_w8a2:4.335667836130597e-05
+2025-06-05 17:20:09,285 - train - INFO - sensitivity_w8a3:3.441559965722263e-05
+2025-06-05 17:20:09,298 - train - INFO - sensitivity_w8a4:1.4085142538533546e-05
+2025-06-05 17:20:09,298 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:20:09,298 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:20:09,299 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:20:09,299 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:20:09,299 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:20:09,300 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:20:09,300 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:20:09,301 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:20:09,301 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:20:09,301 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:20:09,302 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:20:09,302 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:20:09,302 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:20:09,303 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:20:09,303 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:20:09,303 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:20:09,304 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:20:09,304 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:20:09,304 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:20:09,305 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:20:09,305 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:20:09,319 - train - INFO - sensitivity_w2a2:3.4074419090757146e-05
+2025-06-05 17:20:09,332 - train - INFO - sensitivity_w2a3:1.9806890122708865e-05
+2025-06-05 17:20:09,345 - train - INFO - sensitivity_w2a4:1.86568868230097e-05
+2025-06-05 17:20:09,358 - train - INFO - sensitivity_w3a2:2.2007381630828604e-05
+2025-06-05 17:20:09,371 - train - INFO - sensitivity_w3a3:7.699137313466053e-06
+2025-06-05 17:20:09,384 - train - INFO - sensitivity_w3a4:6.44568535790313e-06
+2025-06-05 17:20:09,397 - train - INFO - sensitivity_w4a2:1.8208822439191863e-05
+2025-06-05 17:20:09,411 - train - INFO - sensitivity_w4a3:4.120859557588119e-06
+2025-06-05 17:20:09,424 - train - INFO - sensitivity_w4a4:2.8079548428650014e-06
+2025-06-05 17:20:09,437 - train - INFO - sensitivity_w5a2:1.724209141684696e-05
+2025-06-05 17:20:09,450 - train - INFO - sensitivity_w5a3:2.9233929126348812e-06
+2025-06-05 17:20:09,463 - train - INFO - sensitivity_w5a4:1.7363124698022148e-06
+2025-06-05 17:20:09,476 - train - INFO - sensitivity_w6a2:1.6712605429347605e-05
+2025-06-05 17:20:09,489 - train - INFO - sensitivity_w6a3:2.398970082140295e-06
+2025-06-05 17:20:09,502 - train - INFO - sensitivity_w6a4:1.1765851013478823e-06
+2025-06-05 17:20:09,516 - train - INFO - sensitivity_w7a2:1.65873316291254e-05
+2025-06-05 17:20:09,529 - train - INFO - sensitivity_w7a3:2.217424025729997e-06
+2025-06-05 17:20:09,542 - train - INFO - sensitivity_w7a4:9.703825298856827e-07
+2025-06-05 17:20:09,555 - train - INFO - sensitivity_w8a2:1.6346330085070804e-05
+2025-06-05 17:20:09,568 - train - INFO - sensitivity_w8a3:2.070810296572745e-06
+2025-06-05 17:20:09,581 - train - INFO - sensitivity_w8a4:8.051429176703095e-07
+2025-06-05 17:20:09,582 - train - INFO - latency_accumulation_b6:308.4800109863281
+2025-06-05 17:20:09,582 - train - INFO - latency_accumulation_b7:308.4800109863281
+2025-06-05 17:20:09,582 - train - INFO - latency_accumulation_b8:308.4800109863281
+2025-06-05 17:20:09,583 - train - INFO - latency_accumulation_b9:308.4800109863281
+2025-06-05 17:20:09,583 - train - INFO - latency_accumulation_b10:308.4800109863281
+2025-06-05 17:20:09,583 - train - INFO - latency_accumulation_b11:308.4800109863281
+2025-06-05 17:20:09,584 - train - INFO - latency_accumulation_b12:308.4800109863281
+2025-06-05 17:20:09,584 - train - INFO - latency_accumulation_b13:308.4800109863281
+2025-06-05 17:20:09,584 - train - INFO - latency_accumulation_b14:308.4800109863281
+2025-06-05 17:20:09,585 - train - INFO - latency_accumulation_b15:308.4800109863281
+2025-06-05 17:20:09,585 - train - INFO - latency_accumulation_b16:308479983616.0
+2025-06-05 17:20:09,585 - train - INFO - latency_accumulation_b17:308479983616.0
+2025-06-05 17:20:09,586 - train - INFO - latency_accumulation_b18:308479983616.0
+2025-06-05 17:20:09,586 - train - INFO - latency_accumulation_b19:308479983616.0
+2025-06-05 17:20:09,587 - train - INFO - latency_accumulation_b20:308479983616.0
+2025-06-05 17:20:09,587 - train - INFO - latency_accumulation_b21:308479983616.0
+2025-06-05 17:20:09,587 - train - INFO - latency_accumulation_b22:308479983616.0
+2025-06-05 17:20:09,588 - train - INFO - latency_accumulation_b23:308479983616.0
+2025-06-05 17:20:09,588 - train - INFO - latency_accumulation_b24:308479983616.0
+2025-06-05 17:20:09,588 - train - INFO - latency_accumulation_b25:308479983616.0
+2025-06-05 17:20:09,589 - train - INFO - latency_accumulation_b26:308479983616.0
+2025-06-05 17:20:09,598 - train - INFO - sensitivity_w2a2:0.00012373982463032007
+2025-06-05 17:20:09,608 - train - INFO - sensitivity_w2a3:8.411756425630301e-05
+2025-06-05 17:20:09,617 - train - INFO - sensitivity_w2a4:7.366772479144856e-05
+2025-06-05 17:20:09,626 - train - INFO - sensitivity_w3a2:8.705879736226052e-05
+2025-06-05 17:20:09,636 - train - INFO - sensitivity_w3a3:4.677215838455595e-05
+2025-06-05 17:20:09,645 - train - INFO - sensitivity_w3a4:3.350506449351087e-05
+2025-06-05 17:20:09,654 - train - INFO - sensitivity_w4a2:7.865410589147359e-05
+2025-06-05 17:20:09,664 - train - INFO - sensitivity_w4a3:3.693612234201282e-05
+2025-06-05 17:20:09,673 - train - INFO - sensitivity_w4a4:2.354234311496839e-05
+2025-06-05 17:20:09,682 - train - INFO - sensitivity_w5a2:7.583777187392116e-05
+2025-06-05 17:20:09,692 - train - INFO - sensitivity_w5a3:3.4643780963961035e-05
+2025-06-05 17:20:09,701 - train - INFO - sensitivity_w5a4:2.0951429178239778e-05
+2025-06-05 17:20:09,710 - train - INFO - sensitivity_w6a2:7.412562990793958e-05
+2025-06-05 17:20:09,720 - train - INFO - sensitivity_w6a3:3.2128205930348486e-05
+2025-06-05 17:20:09,729 - train - INFO - sensitivity_w6a4:1.83874653885141e-05
+2025-06-05 17:20:09,738 - train - INFO - sensitivity_w7a2:7.356402056757361e-05
+2025-06-05 17:20:09,747 - train - INFO - sensitivity_w7a3:3.139313048450276e-05
+2025-06-05 17:20:09,757 - train - INFO - sensitivity_w7a4:1.7454480257583782e-05
+2025-06-05 17:20:09,766 - train - INFO - sensitivity_w8a2:7.309342618100345e-05
+2025-06-05 17:20:09,775 - train - INFO - sensitivity_w8a3:3.0954572139307857e-05
+2025-06-05 17:20:09,785 - train - INFO - sensitivity_w8a4:1.7028891306836158e-05
+2025-06-05 17:20:09,785 - train - INFO - latency_accumulation_b6:584.9600219726562
+2025-06-05 17:20:09,786 - train - INFO - latency_accumulation_b7:584.9600219726562
+2025-06-05 17:20:09,786 - train - INFO - latency_accumulation_b8:584.9600219726562
+2025-06-05 17:20:09,786 - train - INFO - latency_accumulation_b9:584.9600219726562
+2025-06-05 17:20:09,787 - train - INFO - latency_accumulation_b10:584.9600219726562
+2025-06-05 17:20:09,787 - train - INFO - latency_accumulation_b11:584.9600219726562
+2025-06-05 17:20:09,787 - train - INFO - latency_accumulation_b12:584.9600219726562
+2025-06-05 17:20:09,788 - train - INFO - latency_accumulation_b13:584.9600219726562
+2025-06-05 17:20:09,788 - train - INFO - latency_accumulation_b14:584.9600219726562
+2025-06-05 17:20:09,788 - train - INFO - latency_accumulation_b15:584.9600219726562
+2025-06-05 17:20:09,789 - train - INFO - latency_accumulation_b16:584959983616.0
+2025-06-05 17:20:09,789 - train - INFO - latency_accumulation_b17:584959983616.0
+2025-06-05 17:20:09,789 - train - INFO - latency_accumulation_b18:584959983616.0
+2025-06-05 17:20:09,790 - train - INFO - latency_accumulation_b19:584959983616.0
+2025-06-05 17:20:09,790 - train - INFO - latency_accumulation_b20:584959983616.0
+2025-06-05 17:20:09,790 - train - INFO - latency_accumulation_b21:584959983616.0
+2025-06-05 17:20:09,791 - train - INFO - latency_accumulation_b22:584959983616.0
+2025-06-05 17:20:09,791 - train - INFO - latency_accumulation_b23:584959983616.0
+2025-06-05 17:20:09,792 - train - INFO - latency_accumulation_b24:584959983616.0
+2025-06-05 17:20:09,792 - train - INFO - latency_accumulation_b25:584959983616.0
+2025-06-05 17:20:09,792 - train - INFO - latency_accumulation_b26:584959983616.0
+2025-06-05 17:20:09,800 - train - INFO - sensitivity_w2a2:8.479843381792307e-05
+2025-06-05 17:20:09,807 - train - INFO - sensitivity_w2a3:7.447204552590847e-05
+2025-06-05 17:20:09,814 - train - INFO - sensitivity_w2a4:5.8049838116858155e-05
+2025-06-05 17:20:09,821 - train - INFO - sensitivity_w3a2:5.479254468809813e-05
+2025-06-05 17:20:09,828 - train - INFO - sensitivity_w3a3:4.434355651028454e-05
+2025-06-05 17:20:09,835 - train - INFO - sensitivity_w3a4:2.8467708034440875e-05
+2025-06-05 17:20:09,842 - train - INFO - sensitivity_w4a2:4.630092371371575e-05
+2025-06-05 17:20:09,849 - train - INFO - sensitivity_w4a3:3.586075035855174e-05
+2025-06-05 17:20:09,855 - train - INFO - sensitivity_w4a4:1.992809120565653e-05
+2025-06-05 17:20:09,862 - train - INFO - sensitivity_w5a2:4.2971980292350054e-05
+2025-06-05 17:20:09,869 - train - INFO - sensitivity_w5a3:3.2575779187027365e-05
+2025-06-05 17:20:09,876 - train - INFO - sensitivity_w5a4:1.6162455722223967e-05
+2025-06-05 17:20:09,883 - train - INFO - sensitivity_w6a2:4.0978455217555165e-05
+2025-06-05 17:20:09,890 - train - INFO - sensitivity_w6a3:3.079318776144646e-05
+2025-06-05 17:20:09,897 - train - INFO - sensitivity_w6a4:1.4502557860396337e-05
+2025-06-05 17:20:09,904 - train - INFO - sensitivity_w7a2:4.035166057292372e-05
+2025-06-05 17:20:09,910 - train - INFO - sensitivity_w7a3:3.0121542295091785e-05
+2025-06-05 17:20:09,917 - train - INFO - sensitivity_w7a4:1.3894974472350441e-05
+2025-06-05 17:20:09,924 - train - INFO - sensitivity_w8a2:4.019273183075711e-05
+2025-06-05 17:20:09,931 - train - INFO - sensitivity_w8a3:2.9985696528456174e-05
+2025-06-05 17:20:09,938 - train - INFO - sensitivity_w8a4:1.3771033991361037e-05
+2025-06-05 17:20:09,939 - train - INFO - latency_accumulation_b6:456.0400085449219
+2025-06-05 17:20:09,941 - train - INFO - latency_accumulation_b7:456.0400085449219
+2025-06-05 17:20:09,942 - train - INFO - latency_accumulation_b8:456.0400085449219
+2025-06-05 17:20:09,943 - train - INFO - latency_accumulation_b9:456.0400085449219
+2025-06-05 17:20:09,944 - train - INFO - latency_accumulation_b10:456.0400085449219
+2025-06-05 17:20:09,946 - train - INFO - latency_accumulation_b11:456.0400085449219
+2025-06-05 17:20:09,947 - train - INFO - latency_accumulation_b12:456.0400085449219
+2025-06-05 17:20:09,948 - train - INFO - latency_accumulation_b13:456.0400085449219
+2025-06-05 17:20:09,949 - train - INFO - latency_accumulation_b14:456.0400085449219
+2025-06-05 17:20:09,951 - train - INFO - latency_accumulation_b15:456.0400085449219
+2025-06-05 17:20:09,952 - train - INFO - latency_accumulation_b16:456039989248.0
+2025-06-05 17:20:09,953 - train - INFO - latency_accumulation_b17:456039989248.0
+2025-06-05 17:20:09,955 - train - INFO - latency_accumulation_b18:456039989248.0
+2025-06-05 17:20:09,956 - train - INFO - latency_accumulation_b19:456039989248.0
+2025-06-05 17:20:09,957 - train - INFO - latency_accumulation_b20:456039989248.0
+2025-06-05 17:20:09,958 - train - INFO - latency_accumulation_b21:456039989248.0
+2025-06-05 17:20:09,960 - train - INFO - latency_accumulation_b22:456039989248.0
+2025-06-05 17:20:09,961 - train - INFO - latency_accumulation_b23:456039989248.0
+2025-06-05 17:20:09,962 - train - INFO - latency_accumulation_b24:456039989248.0
+2025-06-05 17:20:09,963 - train - INFO - latency_accumulation_b25:456039989248.0
+2025-06-05 17:20:09,965 - train - INFO - latency_accumulation_b26:456039989248.0
+2025-06-05 17:20:09,973 - train - INFO - sensitivity_w2a2:4.2334795580245554e-05
+2025-06-05 17:20:09,980 - train - INFO - sensitivity_w2a3:3.5287630453240126e-05
+2025-06-05 17:20:09,987 - train - INFO - sensitivity_w2a4:3.135249062324874e-05
+2025-06-05 17:20:09,994 - train - INFO - sensitivity_w3a2:2.2417127183871344e-05
+2025-06-05 17:20:10,000 - train - INFO - sensitivity_w3a3:1.5144832104851957e-05
+2025-06-05 17:20:10,007 - train - INFO - sensitivity_w3a4:1.0957097401842475e-05
+2025-06-05 17:20:10,014 - train - INFO - sensitivity_w4a2:1.6813573893159628e-05
+2025-06-05 17:20:10,021 - train - INFO - sensitivity_w4a3:9.609036169422325e-06
+2025-06-05 17:20:10,028 - train - INFO - sensitivity_w4a4:5.134217644808814e-06
+2025-06-05 17:20:10,035 - train - INFO - sensitivity_w5a2:1.451573280064622e-05
+2025-06-05 17:20:10,042 - train - INFO - sensitivity_w5a3:7.347117389144842e-06
+2025-06-05 17:20:10,049 - train - INFO - sensitivity_w5a4:2.94950609713851e-06
+2025-06-05 17:20:10,055 - train - INFO - sensitivity_w6a2:1.3496696738002356e-05
+2025-06-05 17:20:10,062 - train - INFO - sensitivity_w6a3:6.347880116663873e-06
+2025-06-05 17:20:10,069 - train - INFO - sensitivity_w6a4:1.887683424683928e-06
+2025-06-05 17:20:10,076 - train - INFO - sensitivity_w7a2:1.3116468835505657e-05
+2025-06-05 17:20:10,083 - train - INFO - sensitivity_w7a3:5.966327535134042e-06
+2025-06-05 17:20:10,090 - train - INFO - sensitivity_w7a4:1.492631554356194e-06
+2025-06-05 17:20:10,097 - train - INFO - sensitivity_w8a2:1.3005323125980794e-05
+2025-06-05 17:20:10,104 - train - INFO - sensitivity_w8a3:5.855057679582387e-06
+2025-06-05 17:20:10,110 - train - INFO - sensitivity_w8a4:1.3665030564879999e-06
+2025-06-05 17:20:10,112 - train - INFO - latency_accumulation_b6:456.0400085449219
+2025-06-05 17:20:10,113 - train - INFO - latency_accumulation_b7:456.0400085449219
+2025-06-05 17:20:10,114 - train - INFO - latency_accumulation_b8:456.0400085449219
+2025-06-05 17:20:10,116 - train - INFO - latency_accumulation_b9:456.0400085449219
+2025-06-05 17:20:10,117 - train - INFO - latency_accumulation_b10:456.0400085449219
+2025-06-05 17:20:10,118 - train - INFO - latency_accumulation_b11:456.0400085449219
+2025-06-05 17:20:10,119 - train - INFO - latency_accumulation_b12:456.0400085449219
+2025-06-05 17:20:10,121 - train - INFO - latency_accumulation_b13:456.0400085449219
+2025-06-05 17:20:10,122 - train - INFO - latency_accumulation_b14:456.0400085449219
+2025-06-05 17:20:10,123 - train - INFO - latency_accumulation_b15:456.0400085449219
+2025-06-05 17:20:10,124 - train - INFO - latency_accumulation_b16:456039989248.0
+2025-06-05 17:20:10,126 - train - INFO - latency_accumulation_b17:456039989248.0
+2025-06-05 17:20:10,127 - train - INFO - latency_accumulation_b18:456039989248.0
+2025-06-05 17:20:10,128 - train - INFO - latency_accumulation_b19:456039989248.0
+2025-06-05 17:20:10,130 - train - INFO - latency_accumulation_b20:456039989248.0
+2025-06-05 17:20:10,131 - train - INFO - latency_accumulation_b21:456039989248.0
+2025-06-05 17:20:10,132 - train - INFO - latency_accumulation_b22:456039989248.0
+2025-06-05 17:20:10,133 - train - INFO - latency_accumulation_b23:456039989248.0
+2025-06-05 17:20:10,135 - train - INFO - latency_accumulation_b24:456039989248.0
+2025-06-05 17:20:10,136 - train - INFO - latency_accumulation_b25:456039989248.0
+2025-06-05 17:20:10,137 - train - INFO - latency_accumulation_b26:456039989248.0
+2025-06-05 17:20:10,145 - train - INFO - sensitivity_w2a2:4.142442048760131e-05
+2025-06-05 17:20:10,152 - train - INFO - sensitivity_w2a3:3.684224793687463e-05
+2025-06-05 17:20:10,159 - train - INFO - sensitivity_w2a4:2.1655980162904598e-05
+2025-06-05 17:20:10,166 - train - INFO - sensitivity_w3a2:3.128790922346525e-05
+2025-06-05 17:20:10,173 - train - INFO - sensitivity_w3a3:2.6933847038890235e-05
+2025-06-05 17:20:10,180 - train - INFO - sensitivity_w3a4:1.1574390555324499e-05
+2025-06-05 17:20:10,187 - train - INFO - sensitivity_w4a2:2.857996878447011e-05
+2025-06-05 17:20:10,193 - train - INFO - sensitivity_w4a3:2.426083665341139e-05
+2025-06-05 17:20:10,200 - train - INFO - sensitivity_w4a4:8.750414963287767e-06
+2025-06-05 17:20:10,207 - train - INFO - sensitivity_w5a2:2.7203208446735516e-05
+2025-06-05 17:20:10,214 - train - INFO - sensitivity_w5a3:2.287524148414377e-05
+2025-06-05 17:20:10,221 - train - INFO - sensitivity_w5a4:7.430568075506017e-06
+2025-06-05 17:20:10,228 - train - INFO - sensitivity_w6a2:2.654882518982049e-05
+2025-06-05 17:20:10,235 - train - INFO - sensitivity_w6a3:2.2172969693201594e-05
+2025-06-05 17:20:10,242 - train - INFO - sensitivity_w6a4:6.735418992320774e-06
+2025-06-05 17:20:10,248 - train - INFO - sensitivity_w7a2:2.639843660290353e-05
+2025-06-05 17:20:10,255 - train - INFO - sensitivity_w7a3:2.2062247808207758e-05
+2025-06-05 17:20:10,262 - train - INFO - sensitivity_w7a4:6.588750238734065e-06
+2025-06-05 17:20:10,269 - train - INFO - sensitivity_w8a2:2.627586218295619e-05
+2025-06-05 17:20:10,276 - train - INFO - sensitivity_w8a3:2.1953939722152427e-05
+2025-06-05 17:20:10,283 - train - INFO - sensitivity_w8a4:6.50663332635304e-06
+2025-06-05 17:20:10,284 - train - INFO - latency_accumulation_b6:456.0400085449219
+2025-06-05 17:20:10,285 - train - INFO - latency_accumulation_b7:456.0400085449219
+2025-06-05 17:20:10,287 - train - INFO - latency_accumulation_b8:456.0400085449219
+2025-06-05 17:20:10,288 - train - INFO - latency_accumulation_b9:456.0400085449219
+2025-06-05 17:20:10,290 - train - INFO - latency_accumulation_b10:456.0400085449219
+2025-06-05 17:20:10,291 - train - INFO - latency_accumulation_b11:456.0400085449219
+2025-06-05 17:20:10,292 - train - INFO - latency_accumulation_b12:456.0400085449219
+2025-06-05 17:20:10,294 - train - INFO - latency_accumulation_b13:456.0400085449219
+2025-06-05 17:20:10,295 - train - INFO - latency_accumulation_b14:456.0400085449219
+2025-06-05 17:20:10,296 - train - INFO - latency_accumulation_b15:456.0400085449219
+2025-06-05 17:20:10,297 - train - INFO - latency_accumulation_b16:456039989248.0
+2025-06-05 17:20:10,299 - train - INFO - latency_accumulation_b17:456039989248.0
+2025-06-05 17:20:10,300 - train - INFO - latency_accumulation_b18:456039989248.0
+2025-06-05 17:20:10,301 - train - INFO - latency_accumulation_b19:456039989248.0
+2025-06-05 17:20:10,303 - train - INFO - latency_accumulation_b20:456039989248.0
+2025-06-05 17:20:10,304 - train - INFO - latency_accumulation_b21:456039989248.0
+2025-06-05 17:20:10,305 - train - INFO - latency_accumulation_b22:456039989248.0
+2025-06-05 17:20:10,307 - train - INFO - latency_accumulation_b23:456039989248.0
+2025-06-05 17:20:10,308 - train - INFO - latency_accumulation_b24:456039989248.0
+2025-06-05 17:20:10,309 - train - INFO - latency_accumulation_b25:456039989248.0
+2025-06-05 17:20:10,311 - train - INFO - latency_accumulation_b26:456039989248.0
+2025-06-05 17:20:10,318 - train - INFO - sensitivity_w2a2:5.446171053336002e-05
+2025-06-05 17:20:10,323 - train - INFO - sensitivity_w2a3:4.642224666895345e-05
+2025-06-05 17:20:10,329 - train - INFO - sensitivity_w2a4:4.348206857685e-05
+2025-06-05 17:20:10,334 - train - INFO - sensitivity_w3a2:2.9528267987188883e-05
+2025-06-05 17:20:10,340 - train - INFO - sensitivity_w3a3:2.0884113837382756e-05
+2025-06-05 17:20:10,345 - train - INFO - sensitivity_w3a4:1.841457560658455e-05
+2025-06-05 17:20:10,350 - train - INFO - sensitivity_w4a2:2.1179173927521333e-05
+2025-06-05 17:20:10,356 - train - INFO - sensitivity_w4a3:1.2973834600416012e-05
+2025-06-05 17:20:10,361 - train - INFO - sensitivity_w4a4:1.0431728696858045e-05
+2025-06-05 17:20:10,367 - train - INFO - sensitivity_w5a2:1.8132050172425807e-05
+2025-06-05 17:20:10,372 - train - INFO - sensitivity_w5a3:9.910047992889304e-06
+2025-06-05 17:20:10,377 - train - INFO - sensitivity_w5a4:7.556325272162212e-06
+2025-06-05 17:20:10,383 - train - INFO - sensitivity_w6a2:1.7059042875189334e-05
+2025-06-05 17:20:10,388 - train - INFO - sensitivity_w6a3:8.875812454789411e-06
+2025-06-05 17:20:10,393 - train - INFO - sensitivity_w6a4:6.439745448005851e-06
+2025-06-05 17:20:10,399 - train - INFO - sensitivity_w7a2:1.6770372894825414e-05
+2025-06-05 17:20:10,404 - train - INFO - sensitivity_w7a3:8.60298860061448e-06
+2025-06-05 17:20:10,410 - train - INFO - sensitivity_w7a4:6.176063834573142e-06
+2025-06-05 17:20:10,415 - train - INFO - sensitivity_w8a2:1.661689020693302e-05
+2025-06-05 17:20:10,420 - train - INFO - sensitivity_w8a3:8.4459725258057e-06
+2025-06-05 17:20:10,426 - train - INFO - sensitivity_w8a4:6.020104137860471e-06
+2025-06-05 17:20:10,427 - train - INFO - latency_accumulation_b6:632.9600219726562
+2025-06-05 17:20:10,428 - train - INFO - latency_accumulation_b7:632.9600219726562
+2025-06-05 17:20:10,430 - train - INFO - latency_accumulation_b8:632.9600219726562
+2025-06-05 17:20:10,431 - train - INFO - latency_accumulation_b9:632.9600219726562
+2025-06-05 17:20:10,432 - train - INFO - latency_accumulation_b10:632.9600219726562
+2025-06-05 17:20:10,434 - train - INFO - latency_accumulation_b11:632.9600219726562
+2025-06-05 17:20:10,435 - train - INFO - latency_accumulation_b12:632.9600219726562
+2025-06-05 17:20:10,436 - train - INFO - latency_accumulation_b13:632.9600219726562
+2025-06-05 17:20:10,437 - train - INFO - latency_accumulation_b14:632.9600219726562
+2025-06-05 17:20:10,439 - train - INFO - latency_accumulation_b15:632.9600219726562
+2025-06-05 17:20:10,440 - train - INFO - latency_accumulation_b16:632959991808.0
+2025-06-05 17:20:10,442 - train - INFO - latency_accumulation_b17:632959991808.0
+2025-06-05 17:20:10,443 - train - INFO - latency_accumulation_b18:632959991808.0
+2025-06-05 17:20:10,444 - train - INFO - latency_accumulation_b19:632959991808.0
+2025-06-05 17:20:10,446 - train - INFO - latency_accumulation_b20:632959991808.0
+2025-06-05 17:20:10,447 - train - INFO - latency_accumulation_b21:632959991808.0
+2025-06-05 17:20:10,448 - train - INFO - latency_accumulation_b22:632959991808.0
+2025-06-05 17:20:10,450 - train - INFO - latency_accumulation_b23:632959991808.0
+2025-06-05 17:20:10,451 - train - INFO - latency_accumulation_b24:632959991808.0
+2025-06-05 17:20:10,452 - train - INFO - latency_accumulation_b25:632959991808.0
+2025-06-05 17:20:10,454 - train - INFO - latency_accumulation_b26:632959991808.0
+2025-06-05 17:20:10,463 - train - INFO - sensitivity_w2a2:6.453911191783845e-05
+2025-06-05 17:20:10,468 - train - INFO - sensitivity_w2a3:3.796088640228845e-05
+2025-06-05 17:20:10,472 - train - INFO - sensitivity_w2a4:3.6130313674220815e-05
+2025-06-05 17:20:10,476 - train - INFO - sensitivity_w3a2:4.6044777263887227e-05
+2025-06-05 17:20:10,480 - train - INFO - sensitivity_w3a3:1.900714596558828e-05
+2025-06-05 17:20:10,485 - train - INFO - sensitivity_w3a4:1.707180308585521e-05
+2025-06-05 17:20:10,489 - train - INFO - sensitivity_w4a2:4.013339275843464e-05
+2025-06-05 17:20:10,493 - train - INFO - sensitivity_w4a3:1.3099173884256743e-05
+2025-06-05 17:20:10,497 - train - INFO - sensitivity_w4a4:1.1093716238974594e-05
+2025-06-05 17:20:10,502 - train - INFO - sensitivity_w5a2:3.773092612391338e-05
+2025-06-05 17:20:10,506 - train - INFO - sensitivity_w5a3:1.069954851118382e-05
+2025-06-05 17:20:10,510 - train - INFO - sensitivity_w5a4:8.764494850765914e-06
+2025-06-05 17:20:10,514 - train - INFO - sensitivity_w6a2:3.6755202017957345e-05
+2025-06-05 17:20:10,519 - train - INFO - sensitivity_w6a3:9.710820449981838e-06
+2025-06-05 17:20:10,523 - train - INFO - sensitivity_w6a4:7.782149623380974e-06
+2025-06-05 17:20:10,527 - train - INFO - sensitivity_w7a2:3.6449906474445015e-05
+2025-06-05 17:20:10,532 - train - INFO - sensitivity_w7a3:9.422755283594597e-06
+2025-06-05 17:20:10,536 - train - INFO - sensitivity_w7a4:7.505853318434674e-06
+2025-06-05 17:20:10,540 - train - INFO - sensitivity_w8a2:3.6349119909573346e-05
+2025-06-05 17:20:10,544 - train - INFO - sensitivity_w8a3:9.32822331378702e-06
+2025-06-05 17:20:10,549 - train - INFO - sensitivity_w8a4:7.396696673822589e-06
+2025-06-05 17:20:10,553 - train - INFO - latency_accumulation_b6:404.8500061035156
+2025-06-05 17:20:10,558 - train - INFO - latency_accumulation_b7:404.8500061035156
+2025-06-05 17:20:10,563 - train - INFO - latency_accumulation_b8:404.8500061035156
+2025-06-05 17:20:10,568 - train - INFO - latency_accumulation_b9:404.8500061035156
+2025-06-05 17:20:10,573 - train - INFO - latency_accumulation_b10:404.8500061035156
+2025-06-05 17:20:10,578 - train - INFO - latency_accumulation_b11:404.8500061035156
+2025-06-05 17:20:10,582 - train - INFO - latency_accumulation_b12:404.8500061035156
+2025-06-05 17:20:10,587 - train - INFO - latency_accumulation_b13:404.8500061035156
+2025-06-05 17:20:10,592 - train - INFO - latency_accumulation_b14:404.8500061035156
+2025-06-05 17:20:10,597 - train - INFO - latency_accumulation_b15:404.8500061035156
+2025-06-05 17:20:10,602 - train - INFO - latency_accumulation_b16:404850016256.0
+2025-06-05 17:20:10,607 - train - INFO - latency_accumulation_b17:404850016256.0
+2025-06-05 17:20:10,612 - train - INFO - latency_accumulation_b18:404850016256.0
+2025-06-05 17:20:10,617 - train - INFO - latency_accumulation_b19:404850016256.0
+2025-06-05 17:20:10,622 - train - INFO - latency_accumulation_b20:404850016256.0
+2025-06-05 17:20:10,627 - train - INFO - latency_accumulation_b21:404850016256.0
+2025-06-05 17:20:10,632 - train - INFO - latency_accumulation_b22:404850016256.0
+2025-06-05 17:20:10,637 - train - INFO - latency_accumulation_b23:404850016256.0
+2025-06-05 17:20:10,642 - train - INFO - latency_accumulation_b24:404850016256.0
+2025-06-05 17:20:10,648 - train - INFO - latency_accumulation_b25:404850016256.0
+2025-06-05 17:20:10,653 - train - INFO - latency_accumulation_b26:404850016256.0
+2025-06-05 17:20:10,662 - train - INFO - sensitivity_w2a2:3.8115329516585916e-05
+2025-06-05 17:20:10,666 - train - INFO - sensitivity_w2a3:3.2094943890115246e-05
+2025-06-05 17:20:10,670 - train - INFO - sensitivity_w2a4:2.4159206077456474e-05
+2025-06-05 17:20:10,675 - train - INFO - sensitivity_w3a2:2.3382868675980717e-05
+2025-06-05 17:20:10,679 - train - INFO - sensitivity_w3a3:1.7513653801870532e-05
+2025-06-05 17:20:10,683 - train - INFO - sensitivity_w3a4:9.30819078348577e-06
+2025-06-05 17:20:10,687 - train - INFO - sensitivity_w4a2:1.8695704056881368e-05
+2025-06-05 17:20:10,692 - train - INFO - sensitivity_w4a3:1.280696778849233e-05
+2025-06-05 17:20:10,696 - train - INFO - sensitivity_w4a4:4.636463017959613e-06
+2025-06-05 17:20:10,700 - train - INFO - sensitivity_w5a2:1.6841462638694793e-05
+2025-06-05 17:20:10,704 - train - INFO - sensitivity_w5a3:1.1011969945684541e-05
+2025-06-05 17:20:10,709 - train - INFO - sensitivity_w5a4:2.8434856176318135e-06
+2025-06-05 17:20:10,713 - train - INFO - sensitivity_w6a2:1.6121717635542154e-05
+2025-06-05 17:20:10,717 - train - INFO - sensitivity_w6a3:1.0291630132996943e-05
+2025-06-05 17:20:10,721 - train - INFO - sensitivity_w6a4:2.128294454450952e-06
+2025-06-05 17:20:10,726 - train - INFO - sensitivity_w7a2:1.583459561516065e-05
+2025-06-05 17:20:10,730 - train - INFO - sensitivity_w7a3:1.0015946827479638e-05
+2025-06-05 17:20:10,734 - train - INFO - sensitivity_w7a4:1.8713607232712093e-06
+2025-06-05 17:20:10,738 - train - INFO - sensitivity_w8a2:1.5723417163826525e-05
+2025-06-05 17:20:10,743 - train - INFO - sensitivity_w8a3:9.90005264611682e-06
+2025-06-05 17:20:10,747 - train - INFO - sensitivity_w8a4:1.7712386579660233e-06
+2025-06-05 17:20:10,752 - train - INFO - latency_accumulation_b6:404.8500061035156
+2025-06-05 17:20:10,757 - train - INFO - latency_accumulation_b7:404.8500061035156
+2025-06-05 17:20:10,762 - train - INFO - latency_accumulation_b8:404.8500061035156
+2025-06-05 17:20:10,767 - train - INFO - latency_accumulation_b9:404.8500061035156
+2025-06-05 17:20:10,772 - train - INFO - latency_accumulation_b10:404.8500061035156
+2025-06-05 17:20:10,777 - train - INFO - latency_accumulation_b11:404.8500061035156
+2025-06-05 17:20:10,782 - train - INFO - latency_accumulation_b12:404.8500061035156
+2025-06-05 17:20:10,787 - train - INFO - latency_accumulation_b13:404.8500061035156
+2025-06-05 17:20:10,792 - train - INFO - latency_accumulation_b14:404.8500061035156
+2025-06-05 17:20:10,797 - train - INFO - latency_accumulation_b15:404.8500061035156
+2025-06-05 17:20:10,802 - train - INFO - latency_accumulation_b16:404850016256.0
+2025-06-05 17:20:10,807 - train - INFO - latency_accumulation_b17:404850016256.0
+2025-06-05 17:20:10,812 - train - INFO - latency_accumulation_b18:404850016256.0
+2025-06-05 17:20:10,817 - train - INFO - latency_accumulation_b19:404850016256.0
+2025-06-05 17:20:10,822 - train - INFO - latency_accumulation_b20:404850016256.0
+2025-06-05 17:20:10,827 - train - INFO - latency_accumulation_b21:404850016256.0
+2025-06-05 17:20:10,832 - train - INFO - latency_accumulation_b22:404850016256.0
+2025-06-05 17:20:10,837 - train - INFO - latency_accumulation_b23:404850016256.0
+2025-06-05 17:20:10,842 - train - INFO - latency_accumulation_b24:404850016256.0
+2025-06-05 17:20:10,847 - train - INFO - latency_accumulation_b25:404850016256.0
+2025-06-05 17:20:10,852 - train - INFO - latency_accumulation_b26:404850016256.0
+2025-06-05 17:20:10,861 - train - INFO - sensitivity_w2a2:5.101729038869962e-05
+2025-06-05 17:20:10,865 - train - INFO - sensitivity_w2a3:4.617608283297159e-05
+2025-06-05 17:20:10,870 - train - INFO - sensitivity_w2a4:2.5875076971715316e-05
+2025-06-05 17:20:10,874 - train - INFO - sensitivity_w3a2:4.095737313036807e-05
+2025-06-05 17:20:10,878 - train - INFO - sensitivity_w3a3:3.60503836418502e-05
+2025-06-05 17:20:10,882 - train - INFO - sensitivity_w3a4:1.5751171304145828e-05
+2025-06-05 17:20:10,887 - train - INFO - sensitivity_w4a2:3.794920485233888e-05
+2025-06-05 17:20:10,891 - train - INFO - sensitivity_w4a3:3.3130279916804284e-05
+2025-06-05 17:20:10,895 - train - INFO - sensitivity_w4a4:1.2912788406538311e-05
+2025-06-05 17:20:10,899 - train - INFO - sensitivity_w5a2:3.63843901141081e-05
+2025-06-05 17:20:10,904 - train - INFO - sensitivity_w5a3:3.1531475542578846e-05
+2025-06-05 17:20:10,908 - train - INFO - sensitivity_w5a4:1.1387348422431387e-05
+2025-06-05 17:20:10,912 - train - INFO - sensitivity_w6a2:3.565054794307798e-05
+2025-06-05 17:20:10,917 - train - INFO - sensitivity_w6a3:3.075998029089533e-05
+2025-06-05 17:20:10,921 - train - INFO - sensitivity_w6a4:1.0711804861784913e-05
+2025-06-05 17:20:10,925 - train - INFO - sensitivity_w7a2:3.541156183928251e-05
+2025-06-05 17:20:10,929 - train - INFO - sensitivity_w7a3:3.055387787753716e-05
+2025-06-05 17:20:10,934 - train - INFO - sensitivity_w7a4:1.0518856470298488e-05
+2025-06-05 17:20:10,938 - train - INFO - sensitivity_w8a2:3.532436676323414e-05
+2025-06-05 17:20:10,942 - train - INFO - sensitivity_w8a3:3.0447245080722496e-05
+2025-06-05 17:20:10,946 - train - INFO - sensitivity_w8a4:1.0422420018585399e-05
+2025-06-05 17:20:10,951 - train - INFO - latency_accumulation_b6:404.8500061035156
+2025-06-05 17:20:10,956 - train - INFO - latency_accumulation_b7:404.8500061035156
+2025-06-05 17:20:10,961 - train - INFO - latency_accumulation_b8:404.8500061035156
+2025-06-05 17:20:10,966 - train - INFO - latency_accumulation_b9:404.8500061035156
+2025-06-05 17:20:10,971 - train - INFO - latency_accumulation_b10:404.8500061035156
+2025-06-05 17:20:10,976 - train - INFO - latency_accumulation_b11:404.8500061035156
+2025-06-05 17:20:10,981 - train - INFO - latency_accumulation_b12:404.8500061035156
+2025-06-05 17:20:10,986 - train - INFO - latency_accumulation_b13:404.8500061035156
+2025-06-05 17:20:10,991 - train - INFO - latency_accumulation_b14:404.8500061035156
+2025-06-05 17:20:10,996 - train - INFO - latency_accumulation_b15:404.8500061035156
+2025-06-05 17:20:11,001 - train - INFO - latency_accumulation_b16:404850016256.0
+2025-06-05 17:20:11,006 - train - INFO - latency_accumulation_b17:404850016256.0
+2025-06-05 17:20:11,011 - train - INFO - latency_accumulation_b18:404850016256.0
+2025-06-05 17:20:11,016 - train - INFO - latency_accumulation_b19:404850016256.0
+2025-06-05 17:20:11,021 - train - INFO - latency_accumulation_b20:404850016256.0
+2025-06-05 17:20:11,026 - train - INFO - latency_accumulation_b21:404850016256.0
+2025-06-05 17:20:11,031 - train - INFO - latency_accumulation_b22:404850016256.0
+2025-06-05 17:20:11,036 - train - INFO - latency_accumulation_b23:404850016256.0
+2025-06-05 17:20:11,041 - train - INFO - latency_accumulation_b24:404850016256.0
+2025-06-05 17:20:11,046 - train - INFO - latency_accumulation_b25:404850016256.0
+2025-06-05 17:20:11,051 - train - INFO - latency_accumulation_b26:404850016256.0
+2025-06-05 17:20:11,060 - train - INFO - sensitivity_w2a2:9.49105087784119e-05
+2025-06-05 17:20:11,063 - train - INFO - sensitivity_w2a3:7.81794951763004e-05
+2025-06-05 17:20:11,067 - train - INFO - sensitivity_w2a4:2.752120781224221e-05
+2025-06-05 17:20:11,070 - train - INFO - sensitivity_w3a2:7.544847903773189e-05
+2025-06-05 17:20:11,073 - train - INFO - sensitivity_w3a3:5.9465644881129265e-05
+2025-06-05 17:20:11,077 - train - INFO - sensitivity_w3a4:1.2837286703870632e-05
+2025-06-05 17:20:11,081 - train - INFO - sensitivity_w4a2:7.194674981292337e-05
+2025-06-05 17:20:11,084 - train - INFO - sensitivity_w4a3:5.62776331207715e-05
+2025-06-05 17:20:11,087 - train - INFO - sensitivity_w4a4:9.350254913442768e-06
+2025-06-05 17:20:11,091 - train - INFO - sensitivity_w5a2:7.025613012956455e-05
+2025-06-05 17:20:11,094 - train - INFO - sensitivity_w5a3:5.463679917738773e-05
+2025-06-05 17:20:11,098 - train - INFO - sensitivity_w5a4:7.887734682299197e-06
+2025-06-05 17:20:11,101 - train - INFO - sensitivity_w6a2:6.969580863369629e-05
+2025-06-05 17:20:11,105 - train - INFO - sensitivity_w6a3:5.4204043408390135e-05
+2025-06-05 17:20:11,108 - train - INFO - sensitivity_w6a4:7.440075023623649e-06
+2025-06-05 17:20:11,112 - train - INFO - sensitivity_w7a2:6.940096500329673e-05
+2025-06-05 17:20:11,115 - train - INFO - sensitivity_w7a3:5.388256977312267e-05
+2025-06-05 17:20:11,119 - train - INFO - sensitivity_w7a4:7.1588920036447234e-06
+2025-06-05 17:20:11,122 - train - INFO - sensitivity_w8a2:6.920191663084552e-05
+2025-06-05 17:20:11,126 - train - INFO - sensitivity_w8a3:5.370634244172834e-05
+2025-06-05 17:20:11,129 - train - INFO - sensitivity_w8a4:7.045634447422344e-06
+2025-06-05 17:20:11,134 - train - INFO - latency_accumulation_b6:656.9600219726562
+2025-06-05 17:20:11,139 - train - INFO - latency_accumulation_b7:656.9600219726562
+2025-06-05 17:20:11,144 - train - INFO - latency_accumulation_b8:656.9600219726562
+2025-06-05 17:20:11,149 - train - INFO - latency_accumulation_b9:656.9600219726562
+2025-06-05 17:20:11,154 - train - INFO - latency_accumulation_b10:656.9600219726562
+2025-06-05 17:20:11,159 - train - INFO - latency_accumulation_b11:656.9600219726562
+2025-06-05 17:20:11,164 - train - INFO - latency_accumulation_b12:656.9600219726562
+2025-06-05 17:20:11,169 - train - INFO - latency_accumulation_b13:656.9600219726562
+2025-06-05 17:20:11,175 - train - INFO - latency_accumulation_b14:656.9600219726562
+2025-06-05 17:20:11,179 - train - INFO - latency_accumulation_b15:656.9600219726562
+2025-06-05 17:20:11,184 - train - INFO - latency_accumulation_b16:656959995904.0
+2025-06-05 17:20:11,190 - train - INFO - latency_accumulation_b17:656959995904.0
+2025-06-05 17:20:11,195 - train - INFO - latency_accumulation_b18:656959995904.0
+2025-06-05 17:20:11,200 - train - INFO - latency_accumulation_b19:656959995904.0
+2025-06-05 17:20:11,205 - train - INFO - latency_accumulation_b20:656959995904.0
+2025-06-05 17:20:11,209 - train - INFO - latency_accumulation_b21:656959995904.0
+2025-06-05 17:20:11,215 - train - INFO - latency_accumulation_b22:656959995904.0
+2025-06-05 17:20:11,220 - train - INFO - latency_accumulation_b23:656959995904.0
+2025-06-05 17:20:11,225 - train - INFO - latency_accumulation_b24:656959995904.0
+2025-06-05 17:20:11,230 - train - INFO - latency_accumulation_b25:656959995904.0
+2025-06-05 17:20:11,235 - train - INFO - latency_accumulation_b26:656959995904.0
+2025-06-05 17:20:11,259 - train - INFO - sensitivity_w2a2:8.703584899194539e-05
+2025-06-05 17:20:11,262 - train - INFO - sensitivity_w2a3:6.669187132501975e-05
+2025-06-05 17:20:11,265 - train - INFO - sensitivity_w2a4:6.418374687200412e-05
+2025-06-05 17:20:11,268 - train - INFO - sensitivity_w3a2:5.764188972534612e-05
+2025-06-05 17:20:11,271 - train - INFO - sensitivity_w3a3:3.797144381678663e-05
+2025-06-05 17:20:11,274 - train - INFO - sensitivity_w3a4:3.592676148400642e-05
+2025-06-05 17:20:11,277 - train - INFO - sensitivity_w4a2:5.1077640819130465e-05
+2025-06-05 17:20:11,280 - train - INFO - sensitivity_w4a3:3.0945178878027946e-05
+2025-06-05 17:20:11,283 - train - INFO - sensitivity_w4a4:2.889553434215486e-05
+2025-06-05 17:20:11,286 - train - INFO - sensitivity_w5a2:4.968514258507639e-05
+2025-06-05 17:20:11,290 - train - INFO - sensitivity_w5a3:2.9604303563246503e-05
+2025-06-05 17:20:11,293 - train - INFO - sensitivity_w5a4:2.752877480816096e-05
+2025-06-05 17:20:11,296 - train - INFO - sensitivity_w6a2:4.863171488977969e-05
+2025-06-05 17:20:11,299 - train - INFO - sensitivity_w6a3:2.8561236831592396e-05
+2025-06-05 17:20:11,302 - train - INFO - sensitivity_w6a4:2.648482404765673e-05
+2025-06-05 17:20:11,305 - train - INFO - sensitivity_w7a2:4.8388854338554665e-05
+2025-06-05 17:20:11,308 - train - INFO - sensitivity_w7a3:2.8326452593319118e-05
+2025-06-05 17:20:11,311 - train - INFO - sensitivity_w7a4:2.6260446247761138e-05
+2025-06-05 17:20:11,314 - train - INFO - sensitivity_w8a2:4.813418854610063e-05
+2025-06-05 17:20:11,317 - train - INFO - sensitivity_w8a3:2.8088245016988367e-05
+2025-06-05 17:20:11,320 - train - INFO - sensitivity_w8a4:2.6015932235168293e-05
+2025-06-05 17:20:11,342 - train - INFO - latency_accumulation_b6:493.00311279296875
+2025-06-05 17:20:11,363 - train - INFO - latency_accumulation_b7:493.00311279296875
+2025-06-05 17:20:11,384 - train - INFO - latency_accumulation_b8:493.00311279296875
+2025-06-05 17:20:11,406 - train - INFO - latency_accumulation_b9:493.00311279296875
+2025-06-05 17:20:11,428 - train - INFO - latency_accumulation_b10:493.00311279296875
+2025-06-05 17:20:11,449 - train - INFO - latency_accumulation_b11:493.00311279296875
+2025-06-05 17:20:11,471 - train - INFO - latency_accumulation_b12:493.00311279296875
+2025-06-05 17:20:11,492 - train - INFO - latency_accumulation_b13:493.0031433105469
+2025-06-05 17:20:11,514 - train - INFO - latency_accumulation_b14:493.0031433105469
+2025-06-05 17:20:11,535 - train - INFO - latency_accumulation_b15:493.0031433105469
+2025-06-05 17:20:11,557 - train - INFO - latency_accumulation_b16:493003112448.0
+2025-06-05 17:20:11,579 - train - INFO - latency_accumulation_b17:493003112448.0
+2025-06-05 17:20:11,600 - train - INFO - latency_accumulation_b18:493003112448.0
+2025-06-05 17:20:11,622 - train - INFO - latency_accumulation_b19:493003112448.0
+2025-06-05 17:20:11,643 - train - INFO - latency_accumulation_b20:493003112448.0
+2025-06-05 17:20:11,665 - train - INFO - latency_accumulation_b21:493003112448.0
+2025-06-05 17:20:11,686 - train - INFO - latency_accumulation_b22:493003112448.0
+2025-06-05 17:20:11,708 - train - INFO - latency_accumulation_b23:493003112448.0
+2025-06-05 17:20:11,730 - train - INFO - latency_accumulation_b24:493003112448.0
+2025-06-05 17:20:11,751 - train - INFO - latency_accumulation_b25:493003112448.0
+2025-06-05 17:20:11,773 - train - INFO - latency_accumulation_b26:493003112448.0
+2025-06-05 17:20:11,798 - train - INFO - sensitivity_w2a2:6.0373036831151694e-05
+2025-06-05 17:20:11,801 - train - INFO - sensitivity_w2a3:5.563611921388656e-05
+2025-06-05 17:20:11,804 - train - INFO - sensitivity_w2a4:3.5357421438675374e-05
+2025-06-05 17:20:11,807 - train - INFO - sensitivity_w3a2:3.95090137317311e-05
+2025-06-05 17:20:11,810 - train - INFO - sensitivity_w3a3:3.463018947513774e-05
+2025-06-05 17:20:11,813 - train - INFO - sensitivity_w3a4:1.5629022527718917e-05
+2025-06-05 17:20:11,816 - train - INFO - sensitivity_w4a2:3.396966349100694e-05
+2025-06-05 17:20:11,820 - train - INFO - sensitivity_w4a3:2.9324084607651457e-05
+2025-06-05 17:20:11,823 - train - INFO - sensitivity_w4a4:1.0409351489215624e-05
+2025-06-05 17:20:11,826 - train - INFO - sensitivity_w5a2:3.3238669857382774e-05
+2025-06-05 17:20:11,829 - train - INFO - sensitivity_w5a3:2.8584874598891474e-05
+2025-06-05 17:20:11,832 - train - INFO - sensitivity_w5a4:9.69315897236811e-06
+2025-06-05 17:20:11,835 - train - INFO - sensitivity_w6a2:3.257399657741189e-05
+2025-06-05 17:20:11,838 - train - INFO - sensitivity_w6a3:2.79054329439532e-05
+2025-06-05 17:20:11,841 - train - INFO - sensitivity_w6a4:9.00650138646597e-06
+2025-06-05 17:20:11,844 - train - INFO - sensitivity_w7a2:3.244680556235835e-05
+2025-06-05 17:20:11,847 - train - INFO - sensitivity_w7a3:2.7787051294581033e-05
+2025-06-05 17:20:11,850 - train - INFO - sensitivity_w7a4:8.883471309673041e-06
+2025-06-05 17:20:11,853 - train - INFO - sensitivity_w8a2:3.2323521736543626e-05
+2025-06-05 17:20:11,856 - train - INFO - sensitivity_w8a3:2.764903547358699e-05
+2025-06-05 17:20:11,859 - train - INFO - sensitivity_w8a4:8.735654773772694e-06
+2025-06-05 17:20:11,881 - train - INFO - latency_accumulation_b6:493.00311279296875
+2025-06-05 17:20:11,903 - train - INFO - latency_accumulation_b7:493.00311279296875
+2025-06-05 17:20:11,924 - train - INFO - latency_accumulation_b8:493.00311279296875
+2025-06-05 17:20:11,946 - train - INFO - latency_accumulation_b9:493.00311279296875
+2025-06-05 17:20:11,967 - train - INFO - latency_accumulation_b10:493.00311279296875
+2025-06-05 17:20:11,988 - train - INFO - latency_accumulation_b11:493.00311279296875
+2025-06-05 17:20:12,010 - train - INFO - latency_accumulation_b12:493.00311279296875
+2025-06-05 17:20:12,031 - train - INFO - latency_accumulation_b13:493.0031433105469
+2025-06-05 17:20:12,053 - train - INFO - latency_accumulation_b14:493.0031433105469
+2025-06-05 17:20:12,075 - train - INFO - latency_accumulation_b15:493.0031433105469
+2025-06-05 17:20:12,096 - train - INFO - latency_accumulation_b16:493003112448.0
+2025-06-05 17:20:12,118 - train - INFO - latency_accumulation_b17:493003112448.0
+2025-06-05 17:20:12,139 - train - INFO - latency_accumulation_b18:493003112448.0
+2025-06-05 17:20:12,161 - train - INFO - latency_accumulation_b19:493003112448.0
+2025-06-05 17:20:12,182 - train - INFO - latency_accumulation_b20:493003112448.0
+2025-06-05 17:20:12,203 - train - INFO - latency_accumulation_b21:493003112448.0
+2025-06-05 17:20:12,225 - train - INFO - latency_accumulation_b22:493003112448.0
+2025-06-05 17:20:12,247 - train - INFO - latency_accumulation_b23:493003112448.0
+2025-06-05 17:20:12,268 - train - INFO - latency_accumulation_b24:493003112448.0
+2025-06-05 17:20:12,290 - train - INFO - latency_accumulation_b25:493003112448.0
+2025-06-05 17:20:12,311 - train - INFO - latency_accumulation_b26:493003112448.0
+2025-06-05 17:20:12,336 - train - INFO - sensitivity_w2a2:2.429050437058322e-05
+2025-06-05 17:20:12,339 - train - INFO - sensitivity_w2a3:2.282531204400584e-05
+2025-06-05 17:20:12,342 - train - INFO - sensitivity_w2a4:9.230936484527774e-06
+2025-06-05 17:20:12,345 - train - INFO - sensitivity_w3a2:1.841982884798199e-05
+2025-06-05 17:20:12,348 - train - INFO - sensitivity_w3a3:1.497634184488561e-05
+2025-06-05 17:20:12,351 - train - INFO - sensitivity_w3a4:3.94112885260256e-06
+2025-06-05 17:20:12,354 - train - INFO - sensitivity_w4a2:1.593017077539116e-05
+2025-06-05 17:20:12,357 - train - INFO - sensitivity_w4a3:1.3046538697381038e-05
+2025-06-05 17:20:12,360 - train - INFO - sensitivity_w4a4:2.786518280117889e-06
+2025-06-05 17:20:12,363 - train - INFO - sensitivity_w5a2:1.603237251401879e-05
+2025-06-05 17:20:12,366 - train - INFO - sensitivity_w5a3:1.3020917322137393e-05
+2025-06-05 17:20:12,370 - train - INFO - sensitivity_w5a4:2.306422629771987e-06
+2025-06-05 17:20:12,373 - train - INFO - sensitivity_w6a2:1.600597533979453e-05
+2025-06-05 17:20:12,376 - train - INFO - sensitivity_w6a3:1.2967879229108803e-05
+2025-06-05 17:20:12,379 - train - INFO - sensitivity_w6a4:2.262913312733872e-06
+2025-06-05 17:20:12,382 - train - INFO - sensitivity_w7a2:1.585111385793425e-05
+2025-06-05 17:20:12,385 - train - INFO - sensitivity_w7a3:1.2826878446503542e-05
+2025-06-05 17:20:12,388 - train - INFO - sensitivity_w7a4:2.1374394236772787e-06
+2025-06-05 17:20:12,391 - train - INFO - sensitivity_w8a2:1.581469587108586e-05
+2025-06-05 17:20:12,394 - train - INFO - sensitivity_w8a3:1.2801856428268366e-05
+2025-06-05 17:20:12,397 - train - INFO - sensitivity_w8a4:2.1252988062769873e-06
+2025-06-05 17:20:12,419 - train - INFO - latency_accumulation_b6:493.00311279296875
+2025-06-05 17:20:12,440 - train - INFO - latency_accumulation_b7:493.00311279296875
+2025-06-05 17:20:12,462 - train - INFO - latency_accumulation_b8:493.00311279296875
+2025-06-05 17:20:12,483 - train - INFO - latency_accumulation_b9:493.00311279296875
+2025-06-05 17:20:12,505 - train - INFO - latency_accumulation_b10:493.00311279296875
+2025-06-05 17:20:12,527 - train - INFO - latency_accumulation_b11:493.00311279296875
+2025-06-05 17:20:12,549 - train - INFO - latency_accumulation_b12:493.00311279296875
+2025-06-05 17:20:12,570 - train - INFO - latency_accumulation_b13:493.0031433105469
+2025-06-05 17:20:12,592 - train - INFO - latency_accumulation_b14:493.0031433105469
+2025-06-05 17:20:12,614 - train - INFO - latency_accumulation_b15:493.0031433105469
+2025-06-05 17:20:12,635 - train - INFO - latency_accumulation_b16:493003112448.0
+2025-06-05 17:20:12,657 - train - INFO - latency_accumulation_b17:493003112448.0
+2025-06-05 17:20:12,678 - train - INFO - latency_accumulation_b18:493003112448.0
+2025-06-05 17:20:12,701 - train - INFO - latency_accumulation_b19:493003112448.0
+2025-06-05 17:20:12,722 - train - INFO - latency_accumulation_b20:493003112448.0
+2025-06-05 17:20:12,744 - train - INFO - latency_accumulation_b21:493003112448.0
+2025-06-05 17:20:12,765 - train - INFO - latency_accumulation_b22:493003112448.0
+2025-06-05 17:20:12,787 - train - INFO - latency_accumulation_b23:493003112448.0
+2025-06-05 17:20:12,809 - train - INFO - latency_accumulation_b24:493003112448.0
+2025-06-05 17:20:12,830 - train - INFO - latency_accumulation_b25:493003112448.0
+2025-06-05 17:20:12,851 - train - INFO - latency_accumulation_b26:493003112448.0
+2025-06-05 17:20:12,851 - train - INFO - origin_latency:7170.479583740234
+2025-06-05 17:20:12,851 - train - INFO - cir_idx:[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+2025-06-05 17:20:13,097 - train - INFO - 16
+2025-06-05 17:20:13,097 - train - INFO - target: w4a4
+2025-06-05 17:20:13,097 - train - INFO - bw_result:[7, 7, 7, 6, 6, 5, 5, 5, 5, 5, 3, 3, 3, 3, 5, 2]
+2025-06-05 17:20:13,097 - train - INFO - ba_result:[4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 4, 3, 2, 4]
+2025-06-05 17:20:13,097 - train - INFO - acc_result:[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+2025-06-06 10:31:53,209 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-06 10:31:53,210 - train - INFO - Get QAT model...
+2025-06-06 10:31:53,368 - train - INFO - current_bacc:[16, 16, 16, 15, 15, 16, 16, 16, 16, 15, 14, 14, 14, 15, 16, 15]
+2025-06-06 10:33:01,826 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-06 10:33:01,826 - train - INFO - Get QAT model...
+2025-06-06 10:33:01,969 - train - INFO - current_bacc:[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+2025-06-09 10:24:11,795 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-09 10:24:11,796 - train - INFO - Get QAT model...
+2025-06-09 10:24:11,942 - train - INFO - current_bacc:[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+2025-06-09 10:24:57,898 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-09 10:24:57,899 - train - INFO - Get QAT model...
+2025-06-09 10:24:58,052 - train - INFO - current_bacc:[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+2025-06-09 10:24:58,647 - train - INFO - mse: 0.0
+2025-06-09 10:24:58,722 - train - INFO - AMP not enabled. Training in float32.
+2025-06-09 10:24:58,722 - train - INFO - Scheduled epochs: 60
+2025-06-09 10:25:05,270 - train - INFO - Verifying initial model in training dataset
+2025-06-09 10:25:09,182 - train - INFO - Test: [   0/2501]  Time: 3.912 (3.912)  Loss:  2.1449 (2.1449)  Acc@1: 58.9844 (58.9844)  Acc@5: 79.1016 (79.1016)
+2025-06-09 10:26:11,263 - train - INFO - Model ResNet18 created, param count:11689512
+2025-06-09 10:26:11,263 - train - INFO - Get QAT model...
+2025-06-09 10:26:11,419 - train - INFO - current_bacc:[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+2025-06-09 10:26:12,136 - train - INFO - mse: 0.0
+2025-06-09 10:26:12,209 - train - INFO - AMP not enabled. Training in float32.
+2025-06-09 10:26:12,209 - train - INFO - Scheduled epochs: 60
+2025-06-09 10:26:22,813 - train - INFO - Test: [   0/97]  Time: 4.055 (4.055)  Loss:  1.0526 (1.0526)  Acc@1: 79.4922 (79.4922)  Acc@5: 93.3594 (93.3594)
+2025-06-09 10:27:20,070 - train - INFO - Test: [  50/97]  Time: 1.414 (1.202)  Loss:  1.6433 (1.2939)  Acc@1: 64.2578 (72.3231)  Acc@5: 85.9375 (91.0271)
+2025-06-09 10:28:13,235 - train - INFO - Test: [  97/97]  Time: 0.661 (1.168)  Loss:  1.2785 (1.4705)  Acc@1: 72.0238 (68.6820)  Acc@5: 90.1786 (88.3880)

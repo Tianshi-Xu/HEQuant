@@ -9,4 +9,3 @@ output
 pretrained
 *.txt
 HAWQ
-*.log

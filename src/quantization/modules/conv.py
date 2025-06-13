@@ -73,6 +73,14 @@ class QConvBn2d(torch.nn.Conv2d):
         bias_shape[1] = -1
         scale_factor = scale_factor.reshape(weight_shape)
         return scale_factor, weight_shape, bias_shape
+    
+    def detach_bn_scaling_factor(self):
+        tmp_running_std = torch.sqrt(self.bn.running_var + self.bn.eps)
+        tmp_scale_factor = self.bn.weight / tmp_running_std
+        weight_shape = [1] * len(self.weight.shape)
+        weight_shape[0] = -1
+        tmp_scale_factor = tmp_scale_factor.reshape(weight_shape)
+        return tmp_scale_factor
 
     def forward(self, x):
         if self.input is None:

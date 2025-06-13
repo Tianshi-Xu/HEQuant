@@ -12,27 +12,29 @@ std:
     - 0.229
     - 0.224
     - 0.225
-mixup_prob: 0.0
-mixup_mode: batch
-mixup_switch_prob: 0.0
-cutmix: 0
-reprob: 0
+# aa: rand-m9-mstd0.5-inc1
+# mixup: 0.8
+# mixup_off_epoch: 175
+# mixup_prob: 1.0
+# mixup_mode: batch
+# mixup_switch_prob: 0.5
+# cutmix: 1.0
+# reprob: 0.25
 remode: pixel
 scale:
     - 0
     - 1.0
-lr: 0.01
-min_lr: 1e-4
-warmup_epochs: 10
+lr: 1e-2
+min_lr: 1e-5
+warmup_epochs: 0
 sched: cosine
 opt: sgd
 smoothing: 0.1
-weight-decay: 1e-4
-epochs: 200
+weight-decay: 2e-3
+epochs: 100
 workers: 4
 world_size: 1
 multiprocessing_distributed: True
-
 
 checkpoint_hist: 1
 sync_bn: True
@@ -40,25 +42,30 @@ pin_mem: True
 
 use_kd: False
 teacher: ResNet18
-teacher_checkpoint: pretrained/resnet18_image.pth
-initial_checkpoint: pretrained/resnet18_image.pth
+teacher_checkpoint: output/train/20250427-184912-ResNet18-224/best.pth.tar.pth
+initial_checkpoint: output/train/20250605-173623-ResNet18-224/best.pth.tar.pth
 # resume: output/train/20250423-124710-ResNet18-224/last.pth.tar
 powerof2: True
-log_name: resnet18_imagenet_avgpool
+log_name: resnet18_imagenet_avgpool_acc15_0606
 wq_per_channel: True
-wq_enable: False
+wq_enable: True
+wq_asym: True
 wq_mode: "LSQ"
 wq_bitw: 32
-aq_enable: False
+aq_enable: True
 aq_asym: True
 aq_mode: "LSQ"
 aq_bitw: 32
-resq_enable: False
+resq_enable: True
 resq_mode: "LSQ"
 resq_bitw: 16
+reg_weight: 0
 # w4a4
-# bw_list: 4, 4, 4, 4, 4, 3, 4, 3, 3, 4, 3, 3, 3, 3, 2, 3
-# ba_list: 4, 4, 4, 4, 4, 4, 3, 4, 4, 2, 3, 3, 3, 2, 3, 2
+bw_list: 4, 4, 4, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 2
+ba_list: 6, 6, 6, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 4
+# original
+# bw_list: 5, 5, 5, 5, 5, 4, 4, 3, 4, 3, 3, 3, 3, 2, 2, 2
+# ba_list: 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3
 qmodules: 
   - "convbn_first;wq:bit:8;aq:bit:8"
   - "layer1.0.convbn1"

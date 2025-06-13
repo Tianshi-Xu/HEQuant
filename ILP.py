@@ -355,6 +355,10 @@ parser.add_argument('--log_name', default='none', type=str,
                     help='act sparsification pattern')
 parser.add_argument('--budget', default=1,
                     help='budget, latency ratio, 4 means w4a4, and the like')
+parser.add_argument('--bw_list', default="", type=str,
+                    help='loool')
+parser.add_argument('--ba_list', default="", type=str,
+                    help='loool')
 lasso_beta=0
 origin_latency = 0
 rotate_mats = {}
@@ -430,7 +434,7 @@ def get_qat_model(model, args):
                 "thd_pos": args.wq_pos,
                 "thd_neg": args.wq_neg,
                 "all_positive": False,
-                "symmetric": True,  # not args.wq_asym,
+                "symmetric": not args.wq_asym,  # not args.wq_asym,
                 "per_channel": args.wq_per_channel,
                 "normalize_first": False,
                 "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
@@ -534,8 +538,7 @@ def main():
         scriptable=args.torchscript)
     
     # print("OK1")
-    if args.initial_checkpoint:
-        load_checkpoint(model, args.initial_checkpoint,strict=False)
+
     
     if args.num_classes is None:
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
@@ -554,7 +557,36 @@ def main():
         num_aug_splits = args.aug_splits
     _logger.info('Get QAT model...')
     model = get_qat_model(model, args)
-    _logger.info(model)
+    current_bacc = []
+    if args.bw_list != "":
+        bw_list = [int(x) for x in args.bw_list.split(',')]
+        ba_list = [int(x) for x in args.ba_list.split(',')]
+        idx = 0
+        for name,layer in model.named_modules():
+            if "first" in name:
+                continue
+            if isinstance(layer, QConvBn2d):
+                layer.quan_w_fn.set_bw(bw_list[idx])
+                layer.quan_a_fn.set_bw(ba_list[idx])
+                scale_factor, _, _ = layer._bn_scaling_factor()
+                scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
+                weight_pos = torch.where(scaled_weight_int > 0, scaled_weight_int, torch.zeros_like(scaled_weight_int))
+                weight_neg = torch.where(scaled_weight_int < 0, scaled_weight_int, torch.zeros_like(scaled_weight_int))
+                weight_pos = torch.sum(weight_pos,dim=(1,2,3))
+                weight_neg = torch.sum(torch.abs(weight_neg),dim=(1,2,3))
+                total_bw = int(ba_list[idx] + torch.max(torch.ceil(torch.log2(torch.max(weight_pos,weight_neg)))))
+                current_bacc.append(total_bw)
+                idx += 1
+    _logger.info(f"current_bacc:{current_bacc}")
+    # exit(0)
+    # _logger.info(model)
+    if args.initial_checkpoint:
+        state_dict = torch.load(args.initial_checkpoint,weights_only=False)
+        _logger.info(f"mse: {torch.sum((state_dict['state_dict']['layer1.1.conv1.weight']-state_dict['state_dict']['layer1.1.convbn1.weight'])**2)}")
+        load_checkpoint(model, args.initial_checkpoint,strict=True)
+    for name,layer in model.named_modules():
+        if isinstance(layer, LsqQuantizer):
+            layer.init = True
     # exit(0)
     # enable split bn (separate bn stats per batch-portion)
     if args.split_bn:
@@ -684,7 +716,10 @@ def main():
         crop_pct=data_config['crop_pct'],
         pin_memory=args.pin_mem,
     )
-
+    validate_loss_fn = nn.CrossEntropyLoss().cuda()
+    
+    # validate(model, loader_eval, validate_loss_fn, args)
+    # exit(0)
     # setup loss function
     if args.jsd:
         assert num_aug_splits > 1  # JSD only valid with aug splits set
@@ -700,7 +735,8 @@ def main():
     if args.use_kd:    
         train_loss_fn_kd = KLLossSoft().cuda()
     validate_loss_fn = nn.CrossEntropyLoss().cuda()
-    # validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+    validate(model, loader_eval, validate_loss_fn, args, amp_autocast=amp_autocast)
+    exit(0)
     # _logger.info("model:"+str(model))
     if args.use_kd:
         _logger.info("Verifying teacher model")
@@ -708,6 +744,7 @@ def main():
     if args.initial_checkpoint != "":
         _logger.info("Verifying initial model in training dataset")
         # validate(model, loader_train, validate_loss_fn, args, amp_autocast=amp_autocast)
+        # exit(0)
         train_metrics = train_one_epoch(
                 0, model, loader_train, optimizer, train_loss_fn, args,
                 lr_scheduler=lr_scheduler,
@@ -797,14 +834,18 @@ def cal_latency(layer,HW,C,K,t):
 # find the minimum latency given layer dimension and accumulation bitwidth and t_min
 def find_min_latency(layer,HW,C,K,bw,ba,t_min,total_bw=None):
     if total_bw is None:
-        # print(layer)
+        print(layer)
         # print("HW,C,K,bw,ba,t_min:",HW,C,K,bw,ba,t_min)
         scale_factor, _, _ = layer._bn_scaling_factor()
         layer.quan_w_fn.set_bw(bw)
         scaled_weight_int = layer.quan_w_fn.quantize(layer.weight * scale_factor)
-        total_bw = int(ba + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
-        # print("total_bw:",total_bw)
-        # print("bw+ba+e:",bw+ba+layer.e) 
+        weight_pos = torch.where(scaled_weight_int > 0, scaled_weight_int, torch.zeros_like(scaled_weight_int))
+        weight_neg = torch.where(scaled_weight_int < 0, scaled_weight_int, torch.zeros_like(scaled_weight_int))
+        weight_pos = torch.sum(weight_pos,dim=(1,2,3))
+        weight_neg = torch.sum(torch.abs(weight_neg),dim=(1,2,3))
+        total_bw = int(ba + torch.max(torch.ceil(torch.log2(torch.max(weight_pos,weight_neg)))))
+        print("total_bw:",total_bw)
+        print("bw+ba+e:",bw+ba+layer.e) 
     b = math.ceil(t_min/total_bw)
     b = 1
     if b==1:
@@ -839,8 +880,8 @@ def ILP(args,loader_train,model,loss_fn):
     idx = 0
     origin_latency = 0
     cir_idx = []
-    wb_list = [2,3,4]
-    ab_list = [2,3,4,5,6]
+    wb_list = [2,3,4,5,6,7,8]
+    ab_list = [2,3,4]
     sensitivity = {}
     _logger.info("target_block_size:"+str(target_block_size))
     t_min = 18
@@ -910,9 +951,14 @@ def ILP(args,loader_train,model,loss_fn):
                     # print(scaled_weight_int.shape)
                     # print(torch.mean(scaled_weight_int))
                     # print(torch.sum(torch.abs(scaled_weight_int)))
-                    # print("wb,ab,e:",wb,ab,layer.e)
-                    total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
+                    weight_pos = torch.where(scaled_weight_int > 0, scaled_weight_int, torch.zeros_like(scaled_weight_int))
+                    weight_neg = torch.where(scaled_weight_int < 0, scaled_weight_int, torch.zeros_like(scaled_weight_int))
+                    weight_pos = torch.sum(weight_pos,dim=(1,2,3))
+                    weight_neg = torch.sum(torch.abs(weight_neg),dim=(1,2,3))
+                    total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.max(weight_pos,weight_neg)))))
+                    # total_bw = int(ab + torch.max(torch.ceil(torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3))))))
                     print("total_bw:",total_bw)
+                    print("wb+ab+e:",wb+ab+layer.e)
                     if tmp is None:
                         tmp = variable[f"wb{wb}ab{ab}_{idx}"]*latency_accumulation[f"b{total_bw}"][idx]
                     else:

@@ -64,6 +64,7 @@ class LsqQuantizer(Quantizer):
         self.p2_round_scale = p2_round_scale
         self.alpha = 0.0
         self.init = init
+        self.value_int = 0
 
     def init_from(self, x):
         x = self.normalize(x)
@@ -83,6 +84,7 @@ class LsqQuantizer(Quantizer):
         else:
             s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
         s_scale = grad_scale(clip(self.scale, torch.tensor(self.eps).float().to(self.scale.device)), s_grad_scale)
+        # print("self.eps",self.eps)
         # s_scale = grad_scale(self.s, s_grad_scale)
         a_scale = grad_scale(self.a, s_grad_scale)
         # round to power-of-2
@@ -102,6 +104,32 @@ class LsqQuantizer(Quantizer):
         self.alpha = s_scale
         return x
     
+    def detach_quantize_weight(self, x):
+        if self.per_channel:
+            tmp_s_grad_scale = 1.0 / ((self.thd_pos * x[0].numel()) ** 0.5)
+        else:
+            tmp_s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
+        tmp_scale = self.scale.detach().data
+        tmp_s_scale = clip(tmp_scale, torch.tensor(self.eps).float().to(self.scale.device)) * tmp_s_grad_scale
+
+        if self.p2_round_scale:
+            tmp_s_scale = 2 ** (torch.log2(tmp_s_scale).round())
+            # tmp_s_scale = torch.ones_like(tmp_scale)
+
+        if self.per_channel:
+            x_quantized = x / tmp_s_scale.repeat(1, x[0].numel()).reshape(x.shape)
+        else:
+            x_quantized = x / tmp_s_scale
+        
+        if self.bit == 1 and not self.all_positive:
+            x_quantized = torch.sign(x_quantized)
+        else:
+            x_quantized = torch.clamp(x_quantized, self.thd_neg, self.thd_pos)
+            x_quantized = round_pass(x_quantized)
+        
+        # 返回计算结果，但不修改 self
+        return x_quantized
+    
     def dequantize(self, x):
         s_scale = self.alpha
         if self.per_channel:
@@ -112,6 +140,8 @@ class LsqQuantizer(Quantizer):
     
     def forward(self, x):
         x = self.quantize(x)
+        # if self.per_channel:
+        #     self.value_int = x
         x = self.dequantize(x)
         return x
 

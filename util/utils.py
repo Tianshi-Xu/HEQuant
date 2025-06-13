@@ -12,6 +12,7 @@ from contextlib import suppress
 import torchvision
 import os
 from collections import OrderedDict
+from src.quantization.modules.conv import QConvBn2d
 
 def train_one_epoch(
         epoch, model, loader, optimizer, loss_fn, args, _logger,
@@ -19,12 +20,27 @@ def train_one_epoch(
     if args.mixup_off_epoch and epoch >= args.mixup_off_epoch:
         if mixup_fn is not None:
             mixup_fn.mixup_enabled = False
+    reg_penalty = 0.
+
+    def acc_reg_penalty(layer: QConvBn2d):
+        """Accumulate the regularization penalty across constrained layers"""
+        nonlocal reg_penalty
+        scale_factor = layer.detach_bn_scaling_factor()
+        scaled_weight_int = layer.weight * scale_factor
+        # scaled_weight_int = scale_factor
+        # print("torch.max(torch.abs(scaled_weight_int))", torch.max(torch.abs(scaled_weight_int)))
+        total_bw_tensor = torch.log2(torch.sum(torch.abs(scaled_weight_int),dim=(1,2,3)))
+        # # # If layer.quan_a_fn.bit is a Python scalar, it will be promoted in the sum.
+
+        cur_penalty = total_bw_tensor.sum() # or scale_factor.detach()
+        # cur_penalty = torch.sum(layer.weight ** 2)
+        return cur_penalty
 
     second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
     losses_m = AverageMeter()
-
+    loader.sampler.set_epoch(epoch)
     model.train()
 
     end = time.time()
@@ -47,12 +63,20 @@ def train_one_epoch(
             else:
                 output = output[0] if isinstance(output, tuple) else output
                 loss = loss_fn(output, target)
-
+        # if args.local_rank == 0:
+        #     _logger.info(f"loss: {loss.item()}, reg_penalty: {reg_penalty.item()*args.reg_weight}")
+        # for layer in model.modules():
+        #     if isinstance(layer, QConvBn2d):
+        #         reg_penalty = reg_penalty + acc_reg_penalty(layer)
+        # if args.local_rank == 0:
+        #     _logger.info(f"loss: {loss.item()}, reg_penalty: {reg_penalty*args.reg_weight}")
+        # loss = loss + args.reg_weight * reg_penalty
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
 
         optimizer.zero_grad()
         if loss_scaler is not None:
+        # if False:
             loss_scaler(
                 loss, optimizer,
                 clip_grad=args.clip_grad,
@@ -65,7 +89,7 @@ def train_one_epoch(
                     model_parameters(model, exclude_head='agc' in args.clip_mode),
                     value=args.clip_grad, mode=args.clip_mode)
             optimizer.step()
-
+        reg_penalty = 0
         if model_ema is not None:
             model_ema.update(model)
 
@@ -104,7 +128,6 @@ def train_one_epoch(
 
         end = time.time()
         # end for
-
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
     return OrderedDict([('loss', losses_m.avg)])

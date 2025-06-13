@@ -341,6 +341,8 @@ parser.add_argument('--bw_list', default="", type=str,
                     help='loool')
 parser.add_argument('--ba_list', default="", type=str,
                     help='loool')
+parser.add_argument('--reg_weight', default=1e-3, type=float,
+                    help='loool')
 lasso_beta=0
 origin_latency = 0
 rotate_mats = {}
@@ -381,8 +383,10 @@ def create_teacher_model(args):
         # checkpoint_path=args.teacher_checkpoint,
         # checkpoint_path="",
     )
-    if args.teacher_checkpoint != "":
-        load_checkpoint(teacher, args.teacher_checkpoint, strict=False)
+    # if args.teacher_checkpoint != "":
+        # tmp = torch.load(args.teacher_checkpoint,weights_only=False)
+        # print(tmp.keys())
+        # load_checkpoint(teacher, args.teacher_checkpoint, strict=True)
     teacher = teacher.eval()
     return teacher
 
@@ -416,7 +420,7 @@ def get_qat_model(model, args):
                 "thd_pos": args.wq_pos,
                 "thd_neg": args.wq_neg,
                 "all_positive": False,
-                "symmetric": True,  # not args.wq_asym,
+                "symmetric": not args.wq_asym,  # not args.wq_asym,
                 "per_channel": args.wq_per_channel,
                 "normalize_first": False,
                 "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
@@ -446,6 +450,80 @@ def get_qat_model(model, args):
                 "enable": args.resq_enable,
                 "mode": args.resq_mode if args.resq_enable else "Identity",
                 "bit": args.resq_bitw,
+                "thd_pos": args.resq_pos,
+                "thd_neg": args.resq_neg,
+                # "all_positive": args.use_relu,
+                "all_positive": False if "downsample" in m else True,
+                "symmetric": True if "downsample" in m else False,  # not args.resq_asym,
+                "per_channel": False,
+                "normalize_first": False,
+                "p2_round_scale": True,  # scaling factor is power-of-2?
+            }
+            qconfigs[m] = {"act": acfg}
+        
+        qat_model = register_act_quant_hook(model, qconfigs)
+
+    return qat_model
+    
+def get_qat_fp_model(model, args):
+    
+    def _decode_args(m):
+        if ";" not in m:
+            return m, {}, {}
+        args = m.split(";")
+        name = args[0]
+        ret = {"wq": {}, "aq": {}}
+        for arg in args[1:]:
+            # print(arg)
+            val = arg.split(":")
+            assert val[1] not in ret[val[0]]
+            ret[val[0]][val[1]] = eval(val[2])
+        return name, ret["wq"], ret["aq"]
+    
+    qat_model = copy.deepcopy(model)
+    qat_model.train()
+
+    qconfigs = {}
+    if args.qmodules is not None:
+        for m in args.qmodules:
+            mod, wq, aq = _decode_args(m)
+            wcfg = {
+                "enable": args.wq_enable,
+                "mode": "Identity",
+                "bit": 32,
+                "thd_pos": args.wq_pos,
+                "thd_neg": args.wq_neg,
+                "all_positive": False,
+                "symmetric": not args.wq_asym,  # not args.wq_asym,
+                "per_channel": args.wq_per_channel,
+                "normalize_first": False,
+                "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
+                "apot": False,
+            }
+            wcfg.update(wq)
+            acfg = {
+                "enable": args.aq_enable,
+                "mode": "Identity",
+                "bit": 32,
+                "thd_pos": args.aq_pos,
+                "thd_neg": args.aq_neg,
+                "all_positive": False if "convbn_first" in m else args.aq_asym,
+                "symmetric": True if "convbn_first" in m else not args.aq_asym,  # not args.aq_asym,
+                "per_channel": args.aq_per_channel,
+                "normalize_first": False,
+                "p2_round_scale": args.powerof2,  # scaling factor is power-of-2?
+            }
+            acfg.update(aq)
+            qconfigs[mod] = {"weight": wcfg, "act": acfg}
+        qat_model = replace_module_by_qmodule(model, qconfigs)
+    if args.resq_modules is not None:
+        # quantize residual 
+        qconfigs = {}
+        for m in args.resq_modules:
+            acfg = {
+                "enable": args.resq_enable,
+                "mode": "Identity",
+                "bit": 32,
                 "thd_pos": args.resq_pos,
                 "thd_neg": args.resq_neg,
                 # "all_positive": args.use_relu,
@@ -508,7 +586,7 @@ def main():
         sampler=sampler_train,
         batch_size=args.batch_size,
         num_workers=args.workers,
-        pin_memory=args.pin_mem,
+        pin_memory=True,
         drop_last=True,
     )
 
@@ -517,7 +595,7 @@ def main():
         sampler=sampler_val,
         batch_size=args.batch_size,
         num_workers=args.workers,
-        pin_memory=args.pin_mem,
+        pin_memory=True,
         drop_last=False,
     )
     
@@ -559,8 +637,7 @@ def main():
         train_loss_fn_kd = KLLossSoft().cuda(device)
     validate_loss_fn = nn.CrossEntropyLoss().cuda(device)
     
-    if args.initial_checkpoint:
-        load_checkpoint(model, args.initial_checkpoint,strict=False)
+
         # if global_rank == 0:
         #     _logger.info("Verifying initial model in test dataset first time")
         # validate(model, data_loader_val, validate_loss_fn, args, _logger)
@@ -576,8 +653,14 @@ def main():
     teacher = None
     if args.use_kd:
         teacher = create_teacher_model(args)
-        
+        teacher = get_qat_fp_model(teacher, args)
+        load_checkpoint(teacher, args.teacher_checkpoint, strict=True)
+        teacher.cuda()
+    
     model = get_qat_model(model, args)
+    model.cuda()
+    if args.initial_checkpoint:
+        load_checkpoint(model, args.initial_checkpoint,strict=True)
     print("args.gpu", args.gpu)
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(
@@ -600,6 +683,7 @@ def main():
     loss_scaler = NativeScaler()
     if global_rank == 0:
         _logger.info('Using native Torch AMP. Training in mixed precision.')
+
     ### load resume model
     misc.load_model(args=args,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler)
     lr_scheduler, num_epochs = create_scheduler(args, optimizer)
@@ -618,7 +702,7 @@ def main():
     if args.use_kd:
         if global_rank == 0:
             _logger.info("Verifying teacher model")
-        validate(teacher, data_loader_val, validate_loss_fn, args, _logger)
+        # validate(teacher, data_loader_val, validate_loss_fn, args, _logger)
     if args.bw_list != "":
         bw_list = [int(x) for x in args.bw_list.split(',')]
         ba_list = [int(x) for x in args.ba_list.split(',')]
@@ -630,11 +714,13 @@ def main():
                 layer.quan_w_fn.set_bw(bw_list[idx])
                 layer.quan_a_fn.set_bw(ba_list[idx])
                 idx += 1
+            if isinstance(layer, LsqQuantizer):
+                layer.init = True
     if args.initial_checkpoint != "":
         if global_rank == 0:
             _logger.info("Verifying initial model in test dataset")
             _logger.info(model.device)
-        # validate(model, data_loader_val, validate_loss_fn, args, _logger)
+        validate(model, data_loader_val, validate_loss_fn, args, _logger)
     # if global_rank == 0:
     #     _logger.info(model)
     # setup checkpoint saver and eval metric tracking
@@ -658,6 +744,9 @@ def main():
         with open(os.path.join(output_dir, 'model.txt'), 'w') as f:
             f.write(str(model))
     max_acc = 0
+    max_acc_epoch = 0
+    if global_rank == 0:
+        _logger.info(model)
     for epoch in range(start_epoch, num_epochs):
         if args.distributed and hasattr(data_loader_train.sampler, 'set_epoch'):
             data_loader_train.sampler.set_epoch(epoch)
@@ -682,9 +771,11 @@ def main():
             misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="last.pth.tar")
             if eval_metrics[eval_metric] > max_acc:
                 max_acc = eval_metrics[eval_metric]
+                max_acc_epoch = epoch
                 if global_rank == 0:
                     misc.save_model(args=args,epoch=epoch,model=model,model_without_ddp=model_without_ddp,optimizer=optimizer,loss_scaler=loss_scaler,name="best.pth.tar")
-            
+    if global_rank == 0:
+        _logger.info("Best accuracy: {}, epoch: {}".format(max_acc, max_acc_epoch))
     
 
 if __name__ == '__main__':
